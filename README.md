@@ -32,14 +32,12 @@ Native, zero-dependency RFC 7519 JSON Web Token (JWT) library for the [Alya Prog
 
 ```
 jwt/
-├── alya.toml               # Package manifest
+├── alya.toml               # Package manifest (depends on alya-lang/crypto)
 ├── src/
 │   ├── lib.alya            # Public API facade
 │   ├── types.alya          # JwtToken & JwtVerifyOptions structs
 │   ├── builder.alya        # Fluent JwtBuilder API
 │   └── core/
-│       ├── crypto.alya     # SHA-256, HMAC-SHA256 & constant-time equality
-│       ├── base64url.alya  # RFC 7515 Base64URL encoder/decoder
 │       └── verifier.alya   # Claim verification logic (exp, nbf, iss, aud)
 ├── examples/
 │   └── demo.alya           # Full end-to-end authentication workflow
@@ -57,13 +55,13 @@ Add `jwt` to the `[dependencies]` section in your `alya.toml`:
 
 ```toml
 [dependencies]
-jwt = { git = "https://github.com/alya-lang/jwt", tag = "v0.1.0" }
+jwt = { git = "https://github.com/alya-lang/jwt", tag = "v0.2.0" }
 ```
 
 Or install it directly using the Alya package CLI:
 
 ```bash
-alyac add jwt --git https://github.com/alya-lang/jwt --tag v0.1.0
+alyac add jwt --git https://github.com/alya-lang/jwt --tag v0.2.0
 alyac install
 ```
 

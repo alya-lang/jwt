@@ -36,6 +36,11 @@ jobs:
         run: |
           alyac pkg list
 
+      - name: Install dependencies
+        run: |
+          alyac install
+
       - name: Run package test suite
         run: |
           alyac run tests/test_basic.alya
+

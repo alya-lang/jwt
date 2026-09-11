@@ -1,13 +1,15 @@
 [package]
 name = "jwt"
-version = "0.1.0"
+version = "0.2.0"
 alya-version = "0.0.6"
 entry = "src/lib.alya"
-description = "Zero-dependency JSON Web Token (JWT) library for Alya"
+description = "JSON Web Token (RFC 7519) library for Alya backed by alya-lang/crypto"
 authors = ["Alya Language Contributors <https://github.com/alya-lang>"]
 license = "MIT"
 homepage = "https://github.com/alya-lang/alya"
 repository = "https://github.com/alya-lang/jwt"
-keywords = ["alya", "alya-lang", "package", "jwt", "token", "auth", "security", "hmac"]
+keywords = ["alya", "alya-lang", "package", "jwt", "token", "auth", "security", "crypto"]
 
 [dependencies]
+crypto = { git = "https://github.com/alya-lang/crypto", tag = "v0.1.0" }
+

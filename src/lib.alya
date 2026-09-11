@@ -1,9 +1,8 @@
 # jwt - JSON Web Token (RFC 7519) Library for Alya
 # Part of the Alya Language package ecosystem (https://github.com/alya-lang)
 
+import "crypto" as crypto
 import "./types.alya"
-import "./core/crypto.alya"
-import "./core/base64url.alya"
 import "./core/verifier.alya"
 import "./builder.alya"
 import "std/json"
@@ -50,14 +49,14 @@ end
 
 # Encodes raw JSON payload string and signs with secret.
 function encode_raw(payload_json_str, secret, header_json_str = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}")
-    let header_b64 = base64url_encode(header_json_str)
-    let payload_b64 = base64url_encode(payload_json_str)
+    let header_b64 = crypto::base64url_encode(header_json_str)
+    let payload_b64 = crypto::base64url_encode(payload_json_str)
     let signing_input = header_b64 + "." + payload_b64
 
-    let k_bytes = str_to_bytes(secret)
-    let m_bytes = str_to_bytes(signing_input)
-    let sig_bytes = hmac_sha256_bytes(k_bytes, m_bytes)
-    let sig_b64 = base64url_encode_bytes(sig_bytes)
+    let k_bytes = crypto::str_to_bytes(secret)
+    let m_bytes = crypto::str_to_bytes(signing_input)
+    let sig_bytes = crypto::hmac_sha256_bytes(k_bytes, m_bytes)
+    let sig_b64 = crypto::base64url_encode_bytes(sig_bytes)
 
     return signing_input + "." + sig_b64
 end
@@ -103,8 +102,8 @@ function decode(token)
         return jwt_token_new(token, null, null, "", 0, "Malformed token: expected 3 parts")
     end
 
-    let header_raw = base64url_decode(parts[0])
-    let payload_raw = base64url_decode(parts[1])
+    let header_raw = crypto::base64url_decode(parts[0])
+    let payload_raw = crypto::base64url_decode(parts[1])
     let signature = parts[2]
 
     let header = json_parse(header_raw)
@@ -124,8 +123,8 @@ function verify_with_options(token, secret, options)
         return jwt_token_new(token, null, null, "", 0, "Malformed token: expected 3 parts")
     end
 
-    let header_raw = base64url_decode(parts[0])
-    let payload_raw = base64url_decode(parts[1])
+    let header_raw = crypto::base64url_decode(parts[0])
+    let payload_raw = crypto::base64url_decode(parts[1])
     let signature = parts[2]
 
     let header = json_parse(header_raw)
@@ -148,12 +147,12 @@ function verify_with_options(token, secret, options)
 
     # 1. Verify HMAC-SHA256 signature
     let signing_input = parts[0] + "." + parts[1]
-    let k_bytes = str_to_bytes(secret)
-    let m_bytes = str_to_bytes(signing_input)
-    let sig_bytes = hmac_sha256_bytes(k_bytes, m_bytes)
-    let expected_sig = base64url_encode_bytes(sig_bytes)
+    let k_bytes = crypto::str_to_bytes(secret)
+    let m_bytes = crypto::str_to_bytes(signing_input)
+    let sig_bytes = crypto::hmac_sha256_bytes(k_bytes, m_bytes)
+    let expected_sig = crypto::base64url_encode_bytes(sig_bytes)
 
-    if constant_time_eq(signature, expected_sig) == 0
+    if crypto::constant_time_eq(signature, expected_sig) == 0
         return jwt_token_new(token, header, payload, signature, 0, "Invalid signature")
     end
 
@@ -220,17 +219,17 @@ end
 # ═══════════════════════════════════════════════════════════════
 
 function sha256(msg)
-    return sha256_hex(msg)
+    return crypto::sha256(msg)
 end
 
 function hmac_sha256(secret, msg)
-    return hmac_sha256_hex(secret, msg)
+    return crypto::hmac_sha256(secret, msg)
 end
 
 function b64url_encode(s)
-    return base64url_encode(s)
+    return crypto::base64url_encode(s)
 end
 
 function b64url_decode(s)
-    return base64url_decode(s)
+    return crypto::base64url_decode(s)
 end
