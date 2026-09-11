@@ -55,13 +55,13 @@ Add `jwt` to the `[dependencies]` section in your `alya.toml`:
 
 ```toml
 [dependencies]
-jwt = { git = "https://github.com/alya-lang/jwt", tag = "v0.2.0" }
+jwt = { git = "https://github.com/alya-lang/jwt", branch = "main" }
 ```
 
 Or install it directly using the Alya package CLI:
 
 ```bash
-alyac add jwt --git https://github.com/alya-lang/jwt --tag v0.2.0
+alyac add jwt --git https://github.com/alya-lang/jwt --branch main
 alyac install
 ```
 
