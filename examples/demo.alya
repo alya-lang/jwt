@@ -6,7 +6,7 @@ import "std/time"
 
 function simulate_http_api(bearer_header, secret)
     say "\n[API Gateway] Incoming request with header: " + bearer_header
-    
+
     # 1. Extract Bearer token
     let prefix = "Bearer "
     let prefix_len = len(prefix)
@@ -99,4 +99,3 @@ function main()
 end
 
 main()
-
