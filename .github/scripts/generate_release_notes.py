@@ -117,7 +117,9 @@ def main():
     if not repo:
         repo_url = pkg_meta.get("repository", "")
         if "github.com/" in repo_url:
-            repo = repo_url.split("github.com/")[-1].rstrip(".git").strip("/")
+            repo = repo_url.split("github.com/")[-1].strip("/")
+            if repo.endswith(".git"):
+                repo = repo[:-4]
     if not repo:
         repo = f"alya-lang/{pkg_name}"
 
