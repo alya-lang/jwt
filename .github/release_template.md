@@ -2,18 +2,18 @@
 
 ## 📦 Installation
 
-Add `{{PACKAGE_NAME}}` to your project's `alya.toml`:
+Using the Alya CLI:
 
-```toml
-[dependencies]
-{{PACKAGE_NAME}} = "{{VERSION}}"
+```bash
+alyac add {{PACKAGE_NAME}} --git https://github.com/{{REPOSITORY}} --tag {{TAG}}
+alyac install
 ```
 
-Or reference directly via Git:
+Or add it directly to your project's `alya.toml`:
 
 ```toml
 [dependencies]
-{{PACKAGE_NAME}} = { git = "https://github.com/{{REPOSITORY}}.git", tag = "{{TAG}}" }
+{{PACKAGE_NAME}} = { git = "https://github.com/{{REPOSITORY}}", tag = "{{TAG}}" }
 ```
 
 ## 🚀 What's Changed
