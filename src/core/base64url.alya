@@ -1,0 +1,150 @@
+# Base64URL encoding and decoding (RFC 7515)
+# Part of the Alya Language package ecosystem (https://github.com/alya-lang)
+
+function base64url_encode(s)
+    let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+    let slen = len(s)
+    let res = ""
+    let i = 0
+    let b0, b1, b2 = 0
+    let has_b1, has_b2 = 0
+    let idx0, idx1, idx2, idx3 = 0
+
+    while i < slen
+        b0 = ord(char_at(s, i))
+        b1 = 0
+        b2 = 0
+        has_b1 = 0
+        has_b2 = 0
+
+        if i + 1 < slen
+            b1 = ord(char_at(s, i + 1))
+            has_b1 = 1
+        end
+        if i + 2 < slen
+            b2 = ord(char_at(s, i + 2))
+            has_b2 = 1
+        end
+
+        idx0 = bit_and(bit_shr(b0, 2), 63)
+        idx1 = bit_and(bit_or(bit_shl(bit_and(b0, 3), 4), bit_shr(b1, 4)), 63)
+
+        res = res + char_at(chars, idx0) + char_at(chars, idx1)
+
+        if has_b1 == 1
+            idx2 = bit_and(bit_or(bit_shl(bit_and(b1, 15), 2), bit_shr(b2, 6)), 63)
+            res = res + char_at(chars, idx2)
+        end
+
+        if has_b2 == 1
+            idx3 = bit_and(b2, 63)
+            res = res + char_at(chars, idx3)
+        end
+
+        i += 3
+    end
+
+    return res
+end
+
+function base64url_encode_bytes(bytes)
+    let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+    let blen = len(bytes)
+    let res = ""
+    let i = 0
+    let b0, b1, b2 = 0
+    let has_b1, has_b2 = 0
+    let idx0, idx1, idx2, idx3 = 0
+
+    while i < blen
+        b0 = bytes[i]
+        b1 = 0
+        b2 = 0
+        has_b1 = 0
+        has_b2 = 0
+
+        if i + 1 < blen
+            b1 = bytes[i + 1]
+            has_b1 = 1
+        end
+        if i + 2 < blen
+            b2 = bytes[i + 2]
+            has_b2 = 1
+        end
+
+        idx0 = bit_and(bit_shr(b0, 2), 63)
+        idx1 = bit_and(bit_or(bit_shl(bit_and(b0, 3), 4), bit_shr(b1, 4)), 63)
+
+        res = res + char_at(chars, idx0) + char_at(chars, idx1)
+
+        if has_b1 == 1
+            idx2 = bit_and(bit_or(bit_shl(bit_and(b1, 15), 2), bit_shr(b2, 6)), 63)
+            res = res + char_at(chars, idx2)
+        end
+
+        if has_b2 == 1
+            idx3 = bit_and(b2, 63)
+            res = res + char_at(chars, idx3)
+        end
+
+        i += 3
+    end
+
+    return res
+end
+
+function _b64url_val(ch)
+    let c = ord(ch)
+    when c
+        is 65..90 then return c - 65       # 'A'..'Z' -> 0..25
+        is 97..122 then return c - 71      # 'a'..'z' -> 26..51
+        is 48..57 then return c + 4        # '0'..'9' -> 52..61
+        is 45, 43 then return 62           # '-' or '+' -> 62
+        is 95, 47 then return 63           # '_' or '/' -> 63
+        else return 0
+    end
+end
+
+function base64url_decode(s)
+    let slen = len(s)
+    if slen == 0
+        return ""
+    end
+
+    let res = ""
+    let i = 0
+    let v0, v1, v2, v3 = 0
+    let b0, b1, b2 = 0
+    let rem = 0
+
+    while i + 3 < slen
+        v0 = _b64url_val(char_at(s, i))
+        v1 = _b64url_val(char_at(s, i + 1))
+        v2 = _b64url_val(char_at(s, i + 2))
+        v3 = _b64url_val(char_at(s, i + 3))
+
+        b0 = bit_or(bit_shl(v0, 2), bit_and(bit_shr(v1, 4), 3))
+        b1 = bit_and(bit_or(bit_shl(bit_and(v1, 15), 4), bit_shr(v2, 2)), 255)
+        b2 = bit_and(bit_or(bit_shl(bit_and(v2, 3), 6), v3), 255)
+
+        res = res + chr(b0) + chr(b1) + chr(b2)
+        i += 4
+    end
+
+    rem = slen - i
+    if rem == 2
+        v0 = _b64url_val(char_at(s, i))
+        v1 = _b64url_val(char_at(s, i + 1))
+        b0 = bit_or(bit_shl(v0, 2), bit_and(bit_shr(v1, 4), 3))
+        res = res + chr(b0)
+    elif rem == 3
+        v0 = _b64url_val(char_at(s, i))
+        v1 = _b64url_val(char_at(s, i + 1))
+        v2 = _b64url_val(char_at(s, i + 2))
+        b0 = bit_or(bit_shl(v0, 2), bit_and(bit_shr(v1, 4), 3))
+        b1 = bit_and(bit_or(bit_shl(bit_and(v1, 15), 4), bit_shr(v2, 2)), 255)
+        res = res + chr(b0) + chr(b1)
+    end
+
+    return res
+end

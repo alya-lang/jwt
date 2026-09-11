@@ -1,0 +1,47 @@
+# JWT Claims and Rules Verification
+# Part of the Alya Language package ecosystem (https://github.com/alya-lang)
+
+import "std/time"
+import "../types.alya"
+
+function verify_claims(payload, options)
+    let opts = options
+    let current_sec = opts.current_time
+    if current_sec == 0
+        current_sec = time()
+    end
+
+    let leeway = opts.leeway
+
+    # 1. Expiration check (exp)
+    if opts.ignore_expiration == 0 and payload.has("exp")
+        let exp_val = payload["exp"]
+        if current_sec - leeway > exp_val
+            return "Token expired"
+        end
+    end
+
+    # 2. Not Before check (nbf)
+    if payload.has("nbf")
+        let nbf_val = payload["nbf"]
+        if current_sec + leeway < nbf_val
+            return "Token not yet valid (nbf)"
+        end
+    end
+
+    # 3. Issuer check (iss)
+    if len(opts.issuer) > 0
+        if not payload.has("iss") or payload["iss"] != opts.issuer
+            return "Invalid issuer"
+        end
+    end
+
+    # 4. Audience check (aud)
+    if len(opts.audience) > 0
+        if not payload.has("aud") or payload["aud"] != opts.audience
+            return "Invalid audience"
+        end
+    end
+
+    return ""
+end

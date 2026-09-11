@@ -1,0 +1,253 @@
+# Cryptographic Primitives: SHA-256 and HMAC-SHA256
+# Part of the Alya Language package ecosystem (https://github.com/alya-lang)
+
+function _rotr32(x, n)
+    return bit_or(bit_shr(x, n), bit_and(bit_shl(x, 32 - n), 4294967295))
+end
+
+function _sha256_k()
+    return [
+        1116352408, 1899447441, 3049323471, 3921009573, 961987163, 1508970993, 2453635748, 2870763221,
+        3624381080, 310598401, 607225278, 1426881987, 1925078388, 2162078206, 2614888103, 3248222580,
+        3835390401, 4022224774, 264347078, 604807628, 770255983, 1249150122, 1555081692, 1996064986,
+        2554220882, 2821834349, 2952996808, 3210313671, 3336571891, 3584528711, 113926993, 338241895,
+        666307205, 773529912, 1294757372, 1396182291, 1695183700, 1986661051, 2177026350, 2456956037,
+        2730485921, 2820302411, 3259730800, 3345764771, 3516065817, 3600352804, 4094571909, 275423344,
+        430227734, 506948616, 659060556, 883997877, 958139571, 1322822218, 1537002063, 1747873779,
+        1955562222, 2024104815, 2227730452, 2361852424, 2428436474, 2756734187, 3204031479, 3329325298
+    ]
+end
+
+function str_to_bytes(s)
+    let slen = len(s)
+    let bytes = []
+    let i = 0
+    while i < slen
+        bytes.push(ord(char_at(s, i)))
+        i += 1
+    end
+    return bytes
+end
+
+function bytes_to_hex(bytes)
+    let hex_chars = "0123456789abcdef"
+    let blen = len(bytes)
+    let res = ""
+    let i = 0
+    while i < blen
+        let b = bytes[i]
+        let hi = bit_and(bit_shr(b, 4), 15)
+        let lo = bit_and(b, 15)
+        res = res + char_at(hex_chars, hi) + char_at(hex_chars, lo)
+        i += 1
+    end
+    return res
+end
+
+function sha256_bytes(data_bytes)
+    let msg_len = len(data_bytes)
+    let total_bits = msg_len * 8
+
+    # 1. Pad message
+    let bytes = []
+    let i = 0
+    while i < msg_len
+        bytes.push(data_bytes[i])
+        i += 1
+    end
+
+    bytes.push(128) # 0x80
+
+    while len(bytes) % 64 != 56
+        bytes.push(0)
+    end
+
+    bytes.push(bit_and(bit_shr(total_bits, 56), 255))
+    bytes.push(bit_and(bit_shr(total_bits, 48), 255))
+    bytes.push(bit_and(bit_shr(total_bits, 40), 255))
+    bytes.push(bit_and(bit_shr(total_bits, 32), 255))
+    bytes.push(bit_and(bit_shr(total_bits, 24), 255))
+    bytes.push(bit_and(bit_shr(total_bits, 16), 255))
+    bytes.push(bit_and(bit_shr(total_bits, 8), 255))
+    bytes.push(bit_and(total_bits, 255))
+
+    # 2. Initialize hash values
+    let k = _sha256_k()
+    let h0 = 1779033703
+    let h1 = 3144134277
+    let h2 = 1013904242
+    let h3 = 2773480762
+    let h4 = 1359893119
+    let h5 = 2600822924
+    let h6 = 528734635
+    let h7 = 1541459225
+
+    let num_blocks = len(bytes) / 64
+    let block_idx = 0
+
+    while block_idx < num_blocks
+        let offset = block_idx * 64
+        let w = []
+
+        let t = 0
+        while t < 16
+            let p = offset + t * 4
+            let w0 = bytes[p]
+            let w1 = bytes[p + 1]
+            let w2 = bytes[p + 2]
+            let w3 = bytes[p + 3]
+            let word = bit_or(bit_shl(w0, 24), bit_or(bit_shl(w1, 16), bit_or(bit_shl(w2, 8), w3)))
+            w.push(word)
+            t += 1
+        end
+
+        while t < 64
+            let s0 = bit_xor(_rotr32(w[t - 15], 7), bit_xor(_rotr32(w[t - 15], 18), bit_shr(w[t - 15], 3)))
+            let s1 = bit_xor(_rotr32(w[t - 2], 17), bit_xor(_rotr32(w[t - 2], 19), bit_shr(w[t - 2], 10)))
+            let word = bit_and(w[t - 16] + s0 + w[t - 7] + s1, 4294967295)
+            w.push(word)
+            t += 1
+        end
+
+        let a = h0
+        let b = h1
+        let c = h2
+        let d = h3
+        let e = h4
+        let f = h5
+        let g = h6
+        let h = h7
+
+        let j = 0
+        while j < 64
+            let s1 = bit_xor(_rotr32(e, 6), bit_xor(_rotr32(e, 11), _rotr32(e, 25)))
+            let ch = bit_xor(g, bit_and(e, bit_xor(f, g)))
+            let temp1 = bit_and(h + s1 + ch + k[j] + w[j], 4294967295)
+            let s0 = bit_xor(_rotr32(a, 2), bit_xor(_rotr32(a, 13), _rotr32(a, 22)))
+            let maj = bit_xor(bit_and(a, b), bit_and(c, bit_xor(a, b)))
+            let temp2 = bit_and(s0 + maj, 4294967295)
+
+            h = g
+            g = f
+            f = e
+            e = bit_and(d + temp1, 4294967295)
+            d = c
+            c = b
+            b = a
+            a = bit_and(temp1 + temp2, 4294967295)
+            j += 1
+        end
+
+        h0 = bit_and(h0 + a, 4294967295)
+        h1 = bit_and(h1 + b, 4294967295)
+        h2 = bit_and(h2 + c, 4294967295)
+        h3 = bit_and(h3 + d, 4294967295)
+        h4 = bit_and(h4 + e, 4294967295)
+        h5 = bit_and(h5 + f, 4294967295)
+        h6 = bit_and(h6 + g, 4294967295)
+        h7 = bit_and(h7 + h, 4294967295)
+
+        block_idx += 1
+    end
+
+    let out = []
+    let words = [h0, h1, h2, h3, h4, h5, h6, h7]
+    let wi = 0
+    while wi < 8
+        let val = words[wi]
+        out.push(bit_and(bit_shr(val, 24), 255))
+        out.push(bit_and(bit_shr(val, 16), 255))
+        out.push(bit_and(bit_shr(val, 8), 255))
+        out.push(bit_and(val, 255))
+        wi += 1
+    end
+
+    return out
+end
+
+function sha256_hex(msg)
+    let bytes = str_to_bytes(msg)
+    let digest = sha256_bytes(bytes)
+    return bytes_to_hex(digest)
+end
+
+function hmac_sha256_bytes(key_bytes, msg_bytes)
+    let k = []
+    let klen = len(key_bytes)
+
+    if klen > 64
+        k = sha256_bytes(key_bytes)
+    else
+        let i = 0
+        while i < klen
+            k.push(key_bytes[i])
+            i += 1
+        end
+    end
+
+    while len(k) < 64
+        k.push(0)
+    end
+
+    let k_ipad = []
+    let k_opad = []
+    let i = 0
+    while i < 64
+        let b = k[i]
+        k_ipad.push(bit_xor(b, 54))
+        k_opad.push(bit_xor(b, 92))
+        i += 1
+    end
+
+    let inner_data = []
+    i = 0
+    while i < 64
+        inner_data.push(k_ipad[i])
+        i += 1
+    end
+    let j = 0
+    let mlen = len(msg_bytes)
+    while j < mlen
+        inner_data.push(msg_bytes[j])
+        j += 1
+    end
+
+    let inner_hash = sha256_bytes(inner_data)
+
+    let outer_data = []
+    i = 0
+    while i < 64
+        outer_data.push(k_opad[i])
+        i += 1
+    end
+    j = 0
+    while j < 32
+        outer_data.push(inner_hash[j])
+        j += 1
+    end
+
+    return sha256_bytes(outer_data)
+end
+
+function hmac_sha256_hex(key_str, msg_str)
+    let k_bytes = str_to_bytes(key_str)
+    let m_bytes = str_to_bytes(msg_str)
+    let digest = hmac_sha256_bytes(k_bytes, m_bytes)
+    return bytes_to_hex(digest)
+end
+
+# Timing-safe constant-time string comparison
+function constant_time_eq(a, b)
+    let alen = len(a)
+    let blen = len(b)
+    if alen != blen
+        return 0
+    end
+    let diff = 0
+    let i = 0
+    while i < alen
+        diff = bit_or(diff, bit_xor(ord(char_at(a, i)), ord(char_at(b, i))))
+        i += 1
+    end
+    return diff == 0
+end

@@ -1,15 +1,102 @@
-# Example usage of jwt
-import "../src/lib.alya" as pkg
+# JWT (JSON Web Token) Example - RFC 7519 Workflow
+# Demonstrates issuance, parsing, Bearer token extraction, and claim verification.
+
+import "../src/lib.alya" as jwt
+import "std/time"
+
+function simulate_http_api(bearer_header, secret)
+    say "\n[API Gateway] Incoming request with header: " + bearer_header
+    
+    # 1. Extract Bearer token
+    let prefix = "Bearer "
+    let prefix_len = len(prefix)
+    if len(bearer_header) <= prefix_len or substring(bearer_header, 0, prefix_len) != prefix
+        say "  [401 Unauthorized] Missing or malformed Bearer header"
+        return
+    end
+
+    let token = substring(bearer_header, prefix_len, len(bearer_header) - prefix_len)
+
+    # 2. Verify token signature and claims
+    let opts = jwt::options(5, "auth.alya.lang", "api.alya.lang")
+    let verified = jwt::verify_with_options(token, secret, opts)
+
+    if verified.valid == 1
+        say "  [200 OK] Authorized request!"
+        say "  Subject  : " + str_from_ptr(verified.payload["sub"])
+        say "  Role     : " + str_from_ptr(verified.payload["role"])
+        let tier_val = verified.payload["tier"]
+        say "  Tier     : " + str(tier_val)
+    else
+        say "  [401 Unauthorized] Token rejection reason: " + verified.error
+    end
+end
 
 function main()
-    # Basic greeting
-    let msg = pkg::hello("Alya Developer")
-    say msg
+    say "=================================================="
+    say "  Alya JWT (RFC 7519) End-to-End Authentication Demo"
+    say "=================================================="
 
-    # Using configuration struct
-    let cfg = pkg::new_config("Modular Architecture", 5)
-    say "Target: " + cfg.name
-    say "Formatted: " + pkg::core_format_custom(cfg)
+    let secret = "super-secret-production-signing-key-2026"
+
+    # Step 1: Issue token via Fluent Builder API
+    say "\n--- 1. Generating JWT Token using Fluent Builder ---"
+    let b = jwt::builder()
+    jwt::builder_subject(b, "usr_948172")
+    jwt::builder_issuer(b, "auth.alya.lang")
+    jwt::builder_audience(b, "api.alya.lang")
+    jwt::builder_expires_in(b, 3600)
+    jwt::builder_claim_str(b, "role", "maintainer")
+    jwt::builder_claim_int(b, "tier", 5)
+    jwt::builder_claim_bool(b, "verified", 1)
+
+    let token = jwt::builder_sign(b, secret)
+    say "Generated Token:\n" + token
+
+    # Step 2: Inspect token without verifying secret (Decode)
+    say "\n--- 2. Inspecting Token Headers and Claims (Unverified) ---"
+    let decoded = jwt::decode(token)
+    if decoded.valid == 1
+        say "Algorithm: " + str_from_ptr(decoded.header["alg"])
+        say "Type     : " + str_from_ptr(decoded.header["typ"])
+        say "Subject  : " + str_from_ptr(decoded.payload["sub"])
+        say "Role     : " + str_from_ptr(decoded.payload["role"])
+        say "Audience : " + str_from_ptr(decoded.payload["aud"])
+        say "Issuer   : " + str_from_ptr(decoded.payload["iss"])
+    end
+
+    # Step 3: Simulate Valid Request to API Gateway
+    say "\n--- 3. Simulating Valid Request ---"
+    let valid_header = "Bearer " + token
+    simulate_http_api(valid_header, secret)
+
+    # Step 4: Simulate Request with Tampered Token
+    say "\n--- 4. Simulating Tampered Token Attack ---"
+    let parts = jwt::_jwt_split_parts(token)
+    let fake_payload = jwt::b64url_encode("{\"sub\":\"usr_948172\",\"role\":\"root\",\"aud\":\"api.alya.lang\",\"iss\":\"auth.alya.lang\"}")
+    let tampered_token = parts[0] + "." + fake_payload + "." + parts[2]
+    simulate_http_api("Bearer " + tampered_token, secret)
+
+    # Step 5: Simulate Request with Wrong Secret
+    say "\n--- 5. Simulating Request Verified With Wrong Secret ---"
+    simulate_http_api(valid_header, "another-unauthorized-secret")
+
+    # Step 6: Simulate Expired Token
+    say "\n--- 6. Simulating Expired Token ---"
+    let b_exp = jwt::builder()
+    jwt::builder_subject(b_exp, "usr_expired")
+    jwt::builder_issuer(b_exp, "auth.alya.lang")
+    jwt::builder_audience(b_exp, "api.alya.lang")
+    jwt::builder_expires_at(b_exp, time() - 300)
+    jwt::builder_claim_str(b_exp, "role", "guest")
+    jwt::builder_claim_int(b_exp, "tier", 1)
+    let expired_token = jwt::builder_sign(b_exp, secret)
+    simulate_http_api("Bearer " + expired_token, secret)
+
+    say "\n=================================================="
+    say "  Demo Completed Successfully!"
+    say "=================================================="
 end
 
 main()
+

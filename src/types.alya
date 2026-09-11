@@ -1,16 +1,89 @@
-# Types and data structures for jwt
+# Types and data structures for jwt package
 # Part of the Alya Language package ecosystem (https://github.com/alya-lang)
 
-struct JwtConfig
-    name
-    prefix
-    count
+struct JwtToken
+    raw
+    header
+    payload
+    signature
+    valid
+    error
 end
 
-function make_config(name = "World", count = 1)
-    return JwtConfig {
-        name: name,
-        prefix: "Hello",
-        count: count
+struct JwtVerifyOptions
+    leeway
+    issuer
+    audience
+    ignore_expiration
+    current_time
+end
+
+function jwt_token_new(raw, header, payload, signature, valid = 1, error = "")
+    return JwtToken {
+        raw: raw,
+        header: header,
+        payload: payload,
+        signature: signature,
+        valid: valid,
+        error: error
     }
+end
+
+function jwt_options_new(leeway = 0, issuer = "", audience = "", ignore_expiration = 0, current_time = 0)
+    return JwtVerifyOptions {
+        leeway: leeway,
+        issuer: issuer,
+        audience: audience,
+        ignore_expiration: ignore_expiration,
+        current_time: current_time
+    }
+end
+
+function _jwt_trim(s)
+    let slen = len(s)
+    if slen == 0
+        return ""
+    end
+    let start_idx = 0
+    while start_idx < slen
+        let ch = char_at(s, start_idx)
+        if ch != " " and ch != "\t" and ch != "\r" and ch != "\n"
+            break
+        end
+        start_idx += 1
+    end
+    if start_idx >= slen
+        return ""
+    end
+    let end_idx = slen - 1
+    while end_idx >= start_idx
+        let ch = char_at(s, end_idx)
+        if ch != " " and ch != "\t" and ch != "\r" and ch != "\n"
+            break
+        end
+        end_idx -= 1
+    end
+    return substring(s, start_idx, end_idx - start_idx + 1)
+end
+
+function _jwt_split_parts(token)
+    let s = _jwt_trim(token)
+    let slen = len(s)
+    let parts = []
+    let start = 0
+    let i = 0
+
+    while i < slen
+        if char_at(s, i) == "."
+            parts.push(substring(s, start, i - start))
+            start = i + 1
+        end
+        i += 1
+    end
+
+    if start <= slen
+        parts.push(substring(s, start, slen - start))
+    end
+
+    return parts
 end

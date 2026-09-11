@@ -8,6 +8,6 @@ authors = ["Alya Language Contributors <https://github.com/alya-lang>"]
 license = "MIT"
 homepage = "https://github.com/alya-lang/alya"
 repository = "https://github.com/alya-lang/jwt"
-keywords = ["alya", "alya-lang", "package", "jwt", ""jwt","token","auth","security","hmac""]
+keywords = ["alya", "alya-lang", "package", "jwt", "token", "auth", "security", "hmac"]
 
 [dependencies]

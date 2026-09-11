@@ -1,14 +1,236 @@
-# jwt library
+# jwt - JSON Web Token (RFC 7519) Library for Alya
 # Part of the Alya Language package ecosystem (https://github.com/alya-lang)
 
 import "./types.alya"
-import "./core/formatter.alya"
+import "./core/crypto.alya"
+import "./core/base64url.alya"
+import "./core/verifier.alya"
+import "./builder.alya"
+import "std/json"
+import "std/time"
 
-# Public facade functions
-function hello(name = "World")
-    return core_format_greeting(name)
+# ═══════════════════════════════════════════════════════════════
+# Internal Serialization Helpers
+# ═══════════════════════════════════════════════════════════════
+
+function _map_to_json(m)
+    let k = keys(m)
+    let v = values(m)
+    let count = len(k)
+    let res = "{"
+    let i = 0
+    while i < count
+        if i > 0
+            res = res + ", "
+        end
+        let key = k[i]
+        let val = v[i]
+        let escaped_key = json_escape(key)
+
+        if key == "exp" or key == "iat" or key == "nbf"
+            res = res + "\"" + escaped_key + "\": " + str(val)
+        elif key == "admin" or key == "active" or (len(key) >= 3 and substring(key, 0, 3) == "is_")
+            if val == 1
+                res = res + "\"" + escaped_key + "\": true"
+            else
+                res = res + "\"" + escaped_key + "\": false"
+            end
+        else
+            res = res + "\"" + escaped_key + "\": \"" + json_escape(val) + "\""
+        end
+        i += 1
+    end
+    res = res + "}"
+    return res
 end
 
-function new_config(name = "World", count = 1)
-    return make_config(name, count)
+# ═══════════════════════════════════════════════════════════════
+# Public API Facade
+# ═══════════════════════════════════════════════════════════════
+
+# Encodes raw JSON payload string and signs with secret.
+function encode_raw(payload_json_str, secret, header_json_str = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}")
+    let header_b64 = base64url_encode(header_json_str)
+    let payload_b64 = base64url_encode(payload_json_str)
+    let signing_input = header_b64 + "." + payload_b64
+
+    let k_bytes = str_to_bytes(secret)
+    let m_bytes = str_to_bytes(signing_input)
+    let sig_bytes = hmac_sha256_bytes(k_bytes, m_bytes)
+    let sig_b64 = base64url_encode_bytes(sig_bytes)
+
+    return signing_input + "." + sig_b64
+end
+
+# Encodes a Map payload and signs it with secret using HMAC-SHA256 (HS256).
+function encode(payload, secret)
+    let payload_json = _map_to_json(payload)
+    return encode_raw(payload_json, secret)
+end
+
+# Encodes a Map payload with custom header map and signs with secret.
+function encode_with_header(payload, secret, custom_header)
+    let header_json = _map_to_json(custom_header)
+    let payload_json = _map_to_json(payload)
+    return encode_raw(payload_json, secret, header_json)
+end
+
+# Convenient helper: creates token with auto-populated 'iat' and 'exp' claims from a Map.
+function sign(payload, secret, expires_in_sec = 3600)
+    let b = builder()
+    let now_sec = time()
+    builder_issued_at(b, now_sec)
+    builder_expires_at(b, now_sec + expires_in_sec)
+
+    let k = keys(payload)
+    let v = values(payload)
+    let i = 0
+    while i < len(k)
+        let key = k[i]
+        if key != "exp" and key != "iat"
+            builder_claim_str(b, key, v[i])
+        end
+        i += 1
+    end
+
+    return builder_sign(b, secret)
+end
+
+# Decodes a JWT token without signature verification into a JwtToken struct.
+function decode(token)
+    let parts = _jwt_split_parts(token)
+    if len(parts) != 3
+        return jwt_token_new(token, null, null, "", 0, "Malformed token: expected 3 parts")
+    end
+
+    let header_raw = base64url_decode(parts[0])
+    let payload_raw = base64url_decode(parts[1])
+    let signature = parts[2]
+
+    let header = json_parse(header_raw)
+    let payload = json_parse(payload_raw)
+
+    if header == null or payload == null
+        return jwt_token_new(token, header, payload, signature, 0, "Malformed JSON in token")
+    end
+
+    return jwt_token_new(token, header, payload, signature, 1, "")
+end
+
+# Verifies HMAC-SHA256 signature and validates standard claims with custom options.
+function verify_with_options(token, secret, options)
+    let parts = _jwt_split_parts(token)
+    if len(parts) != 3
+        return jwt_token_new(token, null, null, "", 0, "Malformed token: expected 3 parts")
+    end
+
+    let header_raw = base64url_decode(parts[0])
+    let payload_raw = base64url_decode(parts[1])
+    let signature = parts[2]
+
+    let header = json_parse(header_raw)
+    if header == null
+        return jwt_token_new(token, null, null, signature, 0, "Malformed header JSON")
+    end
+
+    if not header.has("alg")
+        return jwt_token_new(token, header, null, signature, 0, "Missing 'alg' claim in header")
+    end
+
+    if header["alg"] != "HS256"
+        return jwt_token_new(token, header, null, signature, 0, "Unsupported algorithm: " + header["alg"])
+    end
+
+    let payload = json_parse(payload_raw)
+    if payload == null
+        return jwt_token_new(token, header, null, signature, 0, "Malformed payload JSON")
+    end
+
+    # 1. Verify HMAC-SHA256 signature
+    let signing_input = parts[0] + "." + parts[1]
+    let k_bytes = str_to_bytes(secret)
+    let m_bytes = str_to_bytes(signing_input)
+    let sig_bytes = hmac_sha256_bytes(k_bytes, m_bytes)
+    let expected_sig = base64url_encode_bytes(sig_bytes)
+
+    if constant_time_eq(signature, expected_sig) == 0
+        return jwt_token_new(token, header, payload, signature, 0, "Invalid signature")
+    end
+
+    # 2. Verify claims
+    let claim_err = verify_claims(payload, options)
+    if len(claim_err) > 0
+        return jwt_token_new(token, header, payload, signature, 0, claim_err)
+    end
+
+    return jwt_token_new(token, header, payload, signature, 1, "")
+end
+
+# Verifies HMAC-SHA256 signature and standard claims using default options.
+function verify(token, secret)
+    let default_opts = jwt_options_new()
+    return verify_with_options(token, secret, default_opts)
+end
+
+# Returns 1 if token signature and claims are valid, 0 otherwise.
+function is_valid(token, secret)
+    let res = verify(token, secret)
+    return res.valid == 1
+end
+
+# Returns 1 if token signature and claims match given options, 0 otherwise.
+function is_valid_with_options(token, secret, options)
+    let res = verify_with_options(token, secret, options)
+    return res.valid == 1
+end
+
+# Returns 1 if token is expired (now > exp), 0 otherwise.
+function is_expired(token)
+    let t = decode(token)
+    if t.valid == 0
+        return 1
+    end
+    if t.payload != null and t.payload.has("exp")
+        return time() > t.payload["exp"]
+    end
+    return 0
+end
+
+# Extracts a specific claim from token payload without full signature verification.
+function get_claim(token, claim_name)
+    let t = decode(token)
+    if t.valid == 1 and t.payload != null and t.payload.has(claim_name)
+        return str_from_ptr(t.payload[claim_name])
+    end
+    return null
+end
+
+# Creates a JwtVerifyOptions configuration struct.
+function options(leeway = 0, issuer = "", audience = "", ignore_expiration = 0, current_time = 0)
+    return jwt_options_new(leeway, issuer, audience, ignore_expiration, current_time)
+end
+
+# Helper to sign using a builder instance.
+function builder_sign(b, secret)
+    return encode_raw(builder_to_json(b), secret)
+end
+
+# ═══════════════════════════════════════════════════════════════
+# Exported Low-Level Utilities
+# ═══════════════════════════════════════════════════════════════
+
+function sha256(msg)
+    return sha256_hex(msg)
+end
+
+function hmac_sha256(secret, msg)
+    return hmac_sha256_hex(secret, msg)
+end
+
+function b64url_encode(s)
+    return base64url_encode(s)
+end
+
+function b64url_decode(s)
+    return base64url_decode(s)
 end

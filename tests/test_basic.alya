@@ -1,28 +1,185 @@
-# Test suite for jwt
 import "std/test"
-import "../src/lib.alya" as pkg
+import "std/time"
+import "../src/lib.alya" as jwt
+
+function test_basic_encode_decode(r)
+    say "--- test_basic_encode_decode ---"
+    let payload = {"sub": "user_42", "role": "admin"}
+    let secret = "super-secret-key-12345"
+
+    let token = jwt::encode(payload, secret)
+    runner_assert(r, len(token) > 20, "Token should be non-empty string")
+
+    let decoded = jwt::decode(token)
+    runner_assert_eq(r, decoded.valid, 1, "Decode should succeed")
+    runner_assert_str_eq(r, decoded.header["alg"], "HS256", "Header alg should be HS256")
+    runner_assert_str_eq(r, decoded.header["typ"], "JWT", "Header typ should be JWT")
+    runner_assert_str_eq(r, decoded.payload["sub"], "user_42", "Payload sub should match")
+    runner_assert_str_eq(r, decoded.payload["role"], "admin", "Payload role should match")
+
+    let verified = jwt::verify(token, secret)
+    runner_assert_eq(r, verified.valid, 1, "Verification with correct secret should succeed")
+    runner_assert_eq(r, jwt::is_valid(token, secret), 1, "is_valid should return 1")
+
+    let wrong_secret = "wrong-secret-key"
+    let fail_verify = jwt::verify(token, wrong_secret)
+    runner_assert_eq(r, fail_verify.valid, 0, "Verification with wrong secret should fail")
+    runner_assert_eq(r, jwt::is_valid(token, wrong_secret), 0, "is_valid should return 0 for wrong secret")
+end
+
+function test_tampered_token(r)
+    say "--- test_tampered_token ---"
+    let payload = {"sub": "user_1", "role": "user"}
+    let secret = "secure-key"
+    let token = jwt::encode(payload, secret)
+
+    # Tamper with payload part
+    let tampered_payload = jwt::b64url_encode("{\"sub\":\"user_1\",\"role\":\"admin\"}")
+    let parts = jwt::_jwt_split_parts(token)
+    let tampered_token = parts[0] + "." + tampered_payload + "." + parts[2]
+
+    let res = jwt::verify(tampered_token, secret)
+    runner_assert_eq(r, res.valid, 0, "Tampered token should fail verification")
+    runner_assert_eq(r, jwt::is_valid(tampered_token, secret), 0, "is_valid should fail on tampered token")
+
+    # Tamper with signature
+    let bad_sig_token = parts[0] + "." + parts[1] + ".bad_signature_value"
+    let res_sig = jwt::verify(bad_sig_token, secret)
+    runner_assert_eq(r, res_sig.valid, 0, "Invalid signature token should fail verification")
+end
+
+function test_sign_helper_and_expiry(r)
+    say "--- test_sign_helper_and_expiry ---"
+    let secret = "sign-secret"
+    let payload = {"sub": "session_99"}
+
+    # Token valid for 3600 seconds
+    let token = jwt::sign(payload, secret, 3600)
+    runner_assert_eq(r, jwt::is_valid(token, secret), 1, "Signed token should be valid")
+    runner_assert_eq(r, jwt::is_expired(token), 0, "Token should not be expired")
+
+    let sub_claim = jwt::get_claim(token, "sub")
+    runner_assert_str_eq(r, sub_claim, "session_99", "get_claim('sub') should match")
+end
+
+function test_expiration_verification(r)
+    say "--- test_expiration_verification ---"
+    let secret = "exp-secret"
+    let now_sec = time()
+
+    # Expired token (exp was 100 seconds ago)
+    let b = jwt::builder()
+    jwt::builder_subject(b, "expired_user")
+    jwt::builder_expires_at(b, now_sec - 100)
+    let expired_token = jwt::builder_sign(b, secret)
+
+    let res = jwt::verify(expired_token, secret)
+    runner_assert_eq(r, res.valid, 0, "Expired token should fail default verification")
+    runner_assert_eq(r, jwt::is_expired(expired_token), 1, "is_expired should return 1")
+
+    # Ignore expiration option
+    let opts = jwt::options(0, "", "", 1)
+    let res_ignored = jwt::verify_with_options(expired_token, secret, opts)
+    runner_assert_eq(r, res_ignored.valid, 1, "Expired token should pass with ignore_expiration=1")
+
+    # Leeway option: expired 5 seconds ago, leeway is 10 seconds
+    let b2 = jwt::builder()
+    jwt::builder_subject(b2, "leeway_user")
+    jwt::builder_expires_at(b2, now_sec - 5)
+    let leeway_token = jwt::builder_sign(b2, secret)
+
+    let opts_leeway = jwt::options(10)
+    let res_leeway = jwt::verify_with_options(leeway_token, secret, opts_leeway)
+    runner_assert_eq(r, res_leeway.valid, 1, "Token within leeway should pass verification")
+end
+
+function test_claims_issuer_and_audience(r)
+    say "--- test_claims_issuer_and_audience ---"
+    let secret = "claims-secret"
+    let b = jwt::builder()
+    jwt::builder_subject(b, "client_app")
+    jwt::builder_issuer(b, "auth.myapi.com")
+    jwt::builder_audience(b, "api.myapi.com")
+    let token = jwt::builder_sign(b, secret)
+
+    # Valid issuer & audience
+    let opts_ok = jwt::options(0, "auth.myapi.com", "api.myapi.com")
+    let res_ok = jwt::verify_with_options(token, secret, opts_ok)
+    runner_assert_eq(r, res_ok.valid, 1, "Matching issuer and audience should pass")
+
+    # Wrong issuer
+    let opts_bad_iss = jwt::options(0, "wrong.issuer.com", "api.myapi.com")
+    let res_bad_iss = jwt::verify_with_options(token, secret, opts_bad_iss)
+    runner_assert_eq(r, res_bad_iss.valid, 0, "Wrong issuer should fail")
+
+    # Wrong audience
+    let opts_bad_aud = jwt::options(0, "auth.myapi.com", "wrong.audience.com")
+    let res_bad_aud = jwt::verify_with_options(token, secret, opts_bad_aud)
+    runner_assert_eq(r, res_bad_aud.valid, 0, "Wrong audience should fail")
+end
+
+function test_builder_fluent_api(r)
+    say "--- test_builder_fluent_api ---"
+    let secret = "builder-key"
+    let b = jwt::builder()
+    jwt::builder_subject(b, "developer_1")
+    jwt::builder_issuer(b, "alya-idp")
+    jwt::builder_audience(b, "alya-services")
+    jwt::builder_expires_in(b, 7200)
+    jwt::builder_jwt_id(b, "jti-987654321")
+    jwt::builder_claim_str(b, "tenant_id", "t-100")
+    jwt::builder_claim_int(b, "tier", 3)
+    jwt::builder_claim_bool(b, "premium", 1)
+
+    let token = jwt::builder_sign(b, secret)
+    runner_assert_eq(r, jwt::is_valid(token, secret), 1, "Builder generated token should be valid")
+
+    let t = jwt::decode(token)
+    runner_assert_str_eq(r, t.payload["sub"], "developer_1", "sub claim should match")
+    runner_assert_str_eq(r, t.payload["iss"], "alya-idp", "iss claim should match")
+    runner_assert_str_eq(r, t.payload["aud"], "alya-services", "aud claim should match")
+    runner_assert_str_eq(r, t.payload["jti"], "jti-987654321", "jti claim should match")
+    runner_assert_str_eq(r, t.payload["tenant_id"], "t-100", "custom string claim should match")
+    runner_assert_eq(r, t.payload["tier"], 3, "custom int claim should match")
+    runner_assert_eq(r, t.payload["premium"], 1, "custom bool claim should match")
+end
+
+function test_crypto_primitives_nist_vector(r)
+    say "--- test_crypto_primitives_nist_vector ---"
+    # NIST SHA-256 test vector for "abc"
+    let hash_abc = jwt::sha256("abc")
+    runner_assert_str_eq(r, hash_abc, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", "SHA-256('abc') vector match")
+
+    # Base64URL round-trip test
+    let text = "Alya Language - Modern & Native RFC 7519 JWT"
+    let encoded = jwt::b64url_encode(text)
+    let decoded = jwt::b64url_decode(encoded)
+    runner_assert_str_eq(r, decoded, text, "Base64URL encode/decode round-trip match")
+end
+
+function test_malformed_tokens(r)
+    say "--- test_malformed_tokens ---"
+    let malformed1 = "only.two.parts.extra"
+    let res1 = jwt::decode(malformed1)
+    runner_assert_eq(r, res1.valid, 0, "4 parts token should fail decode")
+
+    let malformed2 = "only_one_part"
+    let res2 = jwt::verify(malformed2, "secret")
+    runner_assert_eq(r, res2.valid, 0, "Single part token should fail verify")
+end
 
 function main()
-    test_suite("jwt Test Suite")
+    test_suite("JWT (JSON Web Token) Test Suite - RFC 7519")
     let r = runner_new()
 
-    # 1. Basic facade function
-    let res = pkg::hello("Alya")
-    runner_assert_str_eq(r, res, "Hello, Alya!", "pkg::hello returns formatted greeting")
-
-    # 2. Default parameter
-    let default_res = pkg::hello()
-    runner_assert_str_eq(r, default_res, "Hello, World!", "pkg::hello() uses default name")
-
-    # 3. Modular types & config constructor
-    let cfg = pkg::new_config("Community", 3)
-    runner_assert_str_eq(r, cfg.name, "Community", "pkg::new_config sets name correctly")
-    runner_assert_str_eq(r, cfg.prefix, "Hello", "pkg::new_config sets default prefix")
-    runner_assert_eq(r, cfg.count, 3, "pkg::new_config sets count correctly")
-
-    # 4. Core custom formatter using struct
-    let custom_res = pkg::core_format_custom(cfg)
-    runner_assert_str_eq(r, custom_res, "Hello, Community!", "pkg::core_format_custom formats using config")
+    test_basic_encode_decode(r)
+    test_tampered_token(r)
+    test_sign_helper_and_expiry(r)
+    test_expiration_verification(r)
+    test_claims_issuer_and_audience(r)
+    test_builder_fluent_api(r)
+    test_crypto_primitives_nist_vector(r)
+    test_malformed_tokens(r)
 
     let failed = runner_summary(r)
     if failed > 0
