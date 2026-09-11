@@ -28,6 +28,10 @@ jobs:
         run: |
           alyac --version
 
+      - name: Check code formatting
+        run: |
+          alyac fmt . --check
+
       - name: Check package manifest
         run: |
           alyac pkg list
