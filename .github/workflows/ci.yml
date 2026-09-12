@@ -40,17 +40,7 @@ jobs:
         run: |
           alyac install
 
-      - name: Install gdb on Linux
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y gdb
-
       - name: Run package test suite
         run: |
-          alyac test || {
-            if [ "$RUNNER_OS" = "Linux" ]; then
-              alyac build tests/test_basic.alya -o test_bin
-              gdb -batch -ex "run" -ex "bt 25" ./test_bin
-            fi
-            exit 1
-          }
+          alyac test
 
