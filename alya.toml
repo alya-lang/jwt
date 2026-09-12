@@ -1,7 +1,7 @@
 [package]
 name = "jwt"
 version = "0.3.0"
-alya-version = "0.0.11"
+alya-version = "0.0.12"
 entry = "src/lib.alya"
 description = "JSON Web Token (RFC 7519) library for Alya backed by alya-lang/crypto"
 authors = ["Alya Language Contributors <https://github.com/alya-lang>"]
