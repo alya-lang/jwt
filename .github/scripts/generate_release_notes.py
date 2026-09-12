@@ -95,7 +95,7 @@ def main():
             tag = run_git(["describe", "--tags", "--abbrev=0"], check=False)
 
     if not tag:
-        tag = "v0.1.0"
+        tag = "v0.3.0"
 
     version = tag.lstrip("v")
 
