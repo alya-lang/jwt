@@ -28,7 +28,7 @@ Native RFC 7519 JSON Web Token (JWT) library for the [Alya Programming Language]
 
 ---
 
-## 📁 Architecture
+## 📁 Project Architecture
 
 ```
 jwt/
@@ -230,7 +230,7 @@ Measurements   : 6 methods
 
 ---
 
-## 🧪 Running Tests & Examples
+## 🧪 Running Tests & Benchmarks
 
 ```bash
 # Run test suite
