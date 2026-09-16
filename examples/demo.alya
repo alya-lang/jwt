@@ -72,7 +72,7 @@ function main()
 
     # Step 4: Simulate Request with Tampered Token
     say "\n--- 4. Simulating Tampered Token Attack ---"
-    let parts = jwt::_jwt_split_parts(token)
+    let parts = jwt::split_parts(token)
     let fake_payload = jwt::b64url_encode("{\"sub\":\"usr_948172\",\"role\":\"root\",\"aud\":\"api.alya.lang\",\"iss\":\"auth.alya.lang\"}")
     let tampered_token = parts[0] + "." + fake_payload + "." + parts[2]
     simulate_http_api("Bearer " + tampered_token, secret)

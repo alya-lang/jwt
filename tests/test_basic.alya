@@ -35,7 +35,7 @@ function test_tampered_token(r)
 
     # Tamper with payload part
     let tampered_payload = jwt::b64url_encode("{\"sub\":\"user_1\",\"role\":\"admin\"}")
-    let parts = jwt::_jwt_split_parts(token)
+    let parts = jwt::split_parts(token)
     let tampered_token = parts[0] + "." + tampered_payload + "." + parts[2]
 
     let res = jwt::verify(tampered_token, secret)

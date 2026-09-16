@@ -131,8 +131,3 @@ pub function split_parts(token)
 
     return parts
 end
-
-# Backward-compatible alias for split_parts
-pub function _jwt_split_parts(token)
-    return split_parts(token)
-end
