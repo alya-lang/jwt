@@ -4,17 +4,13 @@
 import "std/time"
 import "../types.alya"
 
-function verify_claims(payload, options)
+pub function verify_claims(payload, options)
     let opts = options
-    let current_sec = opts.current_time
-    if current_sec == 0
-        current_sec = time()
-    end
-
+    let current_sec = if opts.current_time == 0 then time() else opts.current_time
     let leeway = opts.leeway
 
     # 1. Expiration check (exp)
-    if opts.ignore_expiration == 0 and payload.has("exp")
+    if opts.ignore_expiration == 0 and ("exp" in payload)
         let exp_val = payload["exp"]
         if current_sec - leeway > exp_val
             return "Token expired"
@@ -22,7 +18,7 @@ function verify_claims(payload, options)
     end
 
     # 2. Not Before check (nbf)
-    if payload.has("nbf")
+    if "nbf" in payload
         let nbf_val = payload["nbf"]
         if current_sec + leeway < nbf_val
             return "Token not yet valid (nbf)"
@@ -31,14 +27,14 @@ function verify_claims(payload, options)
 
     # 3. Issuer check (iss)
     if len(opts.issuer) > 0
-        if not payload.has("iss") or payload["iss"] != opts.issuer
+        if ("iss" not in payload) or payload["iss"] != opts.issuer
             return "Invalid issuer"
         end
     end
 
     # 4. Audience check (aud)
     if len(opts.audience) > 0
-        if not payload.has("aud") or payload["aud"] != opts.audience
+        if ("aud" not in payload) or payload["aud"] != opts.audience
             return "Invalid audience"
         end
     end

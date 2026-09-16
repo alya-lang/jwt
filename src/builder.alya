@@ -4,21 +4,16 @@
 import "std/time"
 import "std/json"
 
-struct JwtBuilder
-    claims_str
+# Public builder struct for fluid JWT construction
+pub struct JwtBuilder
+    claims_str,
     claim_count
 end
 
-function builder()
-    return JwtBuilder {
-        claims_str: "",
-        claim_count: 0
-    }
-end
-
+# Internal raw claim appender (private to module)
 function _builder_add_raw(b, pair_str)
     if b.claim_count > 0
-        b.claims_str = b.claims_str + ", " + pair_str
+        b.claims_str += ", " + pair_str
     else
         b.claims_str = pair_str
     end
@@ -26,60 +21,165 @@ function _builder_add_raw(b, pair_str)
     return b
 end
 
-function builder_claim_str(b, key, val)
+function _builder_claim_str(b, key, val)
     return _builder_add_raw(b, "\"" + json_escape(key) + "\": \"" + json_escape(val) + "\"")
 end
 
-function builder_claim_int(b, key, val)
+function _builder_claim_int(b, key, val)
     return _builder_add_raw(b, "\"" + json_escape(key) + "\": " + str(val))
 end
 
-function builder_claim_bool(b, key, val)
-    let s = "false"
-    if val == 1
-        s = "true"
-    end
+function _builder_claim_bool(b, key, val)
+    let s = if val == 1 then "true" else "false"
     return _builder_add_raw(b, "\"" + json_escape(key) + "\": " + s)
 end
 
-function builder_subject(b, sub)
-    return builder_claim_str(b, "sub", sub)
+function _builder_subject(b, sub)
+    return _builder_claim_str(b, "sub", sub)
 end
 
-function builder_issuer(b, iss)
-    return builder_claim_str(b, "iss", iss)
+function _builder_issuer(b, iss)
+    return _builder_claim_str(b, "iss", iss)
 end
 
-function builder_audience(b, aud)
-    return builder_claim_str(b, "aud", aud)
+function _builder_audience(b, aud)
+    return _builder_claim_str(b, "aud", aud)
 end
 
-function builder_issued_at(b, iat_sec = 0)
-    let t = iat_sec
-    if t == 0
-        t = time()
-    end
-    return builder_claim_int(b, "iat", t)
+function _builder_issued_at(b, iat_sec = 0)
+    let t = if iat_sec == 0 then time() else iat_sec
+    return _builder_claim_int(b, "iat", t)
 end
 
-function builder_expires_at(b, exp_timestamp)
-    return builder_claim_int(b, "exp", exp_timestamp)
+function _builder_expires_at(b, exp_timestamp)
+    return _builder_claim_int(b, "exp", exp_timestamp)
 end
 
-function builder_expires_in(b, duration_sec)
+function _builder_expires_in(b, duration_sec)
     let now_sec = time()
-    builder_issued_at(b, now_sec)
-    return builder_expires_at(b, now_sec + duration_sec)
+    _builder_issued_at(b, now_sec)
+    return _builder_expires_at(b, now_sec + duration_sec)
 end
 
-function builder_not_before(b, nbf_timestamp)
-    return builder_claim_int(b, "nbf", nbf_timestamp)
+function _builder_not_before(b, nbf_timestamp)
+    return _builder_claim_int(b, "nbf", nbf_timestamp)
 end
 
-function builder_jwt_id(b, jti)
-    return builder_claim_str(b, "jti", jti)
+function _builder_jwt_id(b, jti)
+    return _builder_claim_str(b, "jti", jti)
 end
 
-function builder_to_json(b)
+function _builder_to_json(b)
     return "{" + b.claims_str + "}"
+end
+
+# ═══════════════════════════════════════════════════════════════
+# Struct Methods on JwtBuilder
+# ═══════════════════════════════════════════════════════════════
+
+pub function JwtBuilder.claim_str(self, key, val)
+    return _builder_claim_str(self, key, val)
+end
+
+pub function JwtBuilder.claim_int(self, key, val)
+    return _builder_claim_int(self, key, val)
+end
+
+pub function JwtBuilder.claim_bool(self, key, val)
+    return _builder_claim_bool(self, key, val)
+end
+
+pub function JwtBuilder.subject(self, sub)
+    return _builder_subject(self, sub)
+end
+
+pub function JwtBuilder.issuer(self, iss)
+    return _builder_issuer(self, iss)
+end
+
+pub function JwtBuilder.audience(self, aud)
+    return _builder_audience(self, aud)
+end
+
+pub function JwtBuilder.issued_at(self, iat_sec = 0)
+    return _builder_issued_at(self, iat_sec)
+end
+
+pub function JwtBuilder.expires_at(self, exp_timestamp)
+    return _builder_expires_at(self, exp_timestamp)
+end
+
+pub function JwtBuilder.expires_in(self, duration_sec)
+    return _builder_expires_in(self, duration_sec)
+end
+
+pub function JwtBuilder.not_before(self, nbf_timestamp)
+    return _builder_not_before(self, nbf_timestamp)
+end
+
+pub function JwtBuilder.jwt_id(self, jti)
+    return _builder_jwt_id(self, jti)
+end
+
+pub function JwtBuilder.to_json(self)
+    return _builder_to_json(self)
+end
+
+# ═══════════════════════════════════════════════════════════════
+# Public Constructor & Helpers
+# ═══════════════════════════════════════════════════════════════
+
+pub function builder()
+    return JwtBuilder {
+        claims_str: "",
+        claim_count: 0
+    }
+end
+
+pub function builder_claim_str(b, key, val)
+    return _builder_claim_str(b, key, val)
+end
+
+pub function builder_claim_int(b, key, val)
+    return _builder_claim_int(b, key, val)
+end
+
+pub function builder_claim_bool(b, key, val)
+    return _builder_claim_bool(b, key, val)
+end
+
+pub function builder_subject(b, sub)
+    return _builder_subject(b, sub)
+end
+
+pub function builder_issuer(b, iss)
+    return _builder_issuer(b, iss)
+end
+
+pub function builder_audience(b, aud)
+    return _builder_audience(b, aud)
+end
+
+pub function builder_issued_at(b, iat_sec = 0)
+    return _builder_issued_at(b, iat_sec)
+end
+
+pub function builder_expires_at(b, exp_timestamp)
+    return _builder_expires_at(b, exp_timestamp)
+end
+
+pub function builder_expires_in(b, duration_sec)
+    return _builder_expires_in(b, duration_sec)
+end
+
+pub function builder_not_before(b, nbf_timestamp)
+    return _builder_not_before(b, nbf_timestamp)
+end
+
+pub function builder_jwt_id(b, jti)
+    return _builder_jwt_id(b, jti)
+end
+
+pub function builder_to_json(b)
+    return _builder_to_json(b)
 end

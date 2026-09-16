@@ -168,6 +168,29 @@ function test_malformed_tokens(r)
     runner_assert_eq(r, res2.valid, 0, "Single part token should fail verify")
 end
 
+function test_v018_features(r)
+    say "--- test_v018_features ---"
+    runner_assert_eq(r, jwt::JwtAlgorithm.HS256, 1, "JwtAlgorithm.HS256 should equal 1")
+
+    let b = jwt::builder()
+    jwt::builder_subject(b, "alice")
+    jwt::builder_claim_str(b, "role", "admin")
+    let token = jwt::builder_sign(b, "secret123")
+
+    let decoded = jwt::decode(token)
+    runner_assert_eq(r, decoded.is_valid(), 1, "decoded.is_valid() should return 1")
+    runner_assert_str_eq(r, decoded.get_claim("sub"), "alice", "decoded.get_claim('sub') should match")
+
+    let parts = jwt::split_parts(token)
+    runner_assert_eq(r, len(parts), 3, "split_parts should return 3 parts")
+
+    let opts = jwt::options()
+    opts.with_leeway(15)
+    opts.with_issuer("test-iss")
+    runner_assert_eq(r, opts.leeway, 15, "opts.with_leeway should update leeway")
+    runner_assert_str_eq(r, opts.issuer, "test-iss", "opts.with_issuer should update issuer")
+end
+
 function main()
     test_suite("JWT (JSON Web Token) Test Suite - RFC 7519")
     let r = runner_new()
@@ -180,6 +203,7 @@ function main()
     test_builder_fluent_api(r)
     test_crypto_primitives_nist_vector(r)
     test_malformed_tokens(r)
+    test_v018_features(r)
 
     let failed = runner_summary(r)
     if failed > 0
