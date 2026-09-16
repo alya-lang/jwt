@@ -11,5 +11,4 @@ repository = "https://github.com/alya-lang/jwt"
 keywords = ["alya", "alya-lang", "package", "jwt", "token", "auth", "security", "crypto"]
 
 [dependencies]
-crypto = { git = "https://github.com/alya-lang/crypto", tag = "v0.3.0" }
-
+crypto = { git = "https://github.com/alya-lang/crypto", tag = "v0.6.0" }
