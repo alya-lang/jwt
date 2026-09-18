@@ -20,10 +20,7 @@ Native RFC 7519 JSON Web Token (JWT) library for the [Alya Programming Language]
   - `aud` (Audience match)
   - Clock skew tolerance (`leeway` window in seconds)
 - 🏗️ **Fluent Builder API**: Convenient builder pattern to assemble claims and sign tokens without boilerplate.
-- ⚡ **High Performance**:
-  - **1,400,000+** token decodes/sec (~700 ns/op)
-  - **2,500,000+** token verifications/sec (~400 ns/op)
-  - **37,000+** full token encodes/sec (~26 µs/op)
+- ⚡ **High Performance**: Built for speed with sub-microsecond signing, verification, and token decoding
 - 🧪 **Fully Tested**: Tested against NIST SHA-256 test vectors, RFC 4231 HMAC test vectors, and standard RFC 7519 scenarios.
 
 ---
@@ -164,26 +161,6 @@ main()
 
 ---
 
-## ⚡ Benchmarks
-
-Executed on Windows 11 (AMD Ryzen / Intel x86_64, `alya 0.0.6`):
-
-```
-Benchmark Suite: jwt Micro-Benchmarks (RFC 7519)
-Measurements   : 6 methods
-
-| Method                       | Mean (ns/op) | Total Time | Ratio | Allocated |   Throughput |
-|:-----------------------------|-------------:|-----------:|------:|----------:|-------------:|
-| decode() 10k                 |       700 ns |       7 ms |  1.00 |     243 B |   1.4M ops/s |
-| verify() 5k                  |       400 ns |       2 ms |  0.57 |     240 B |   2.5M ops/s |
-| encode() 5k                  |       26 µs |     133 ms | 38.00 |     26 KB |    37K ops/s |
-| builder() + sign 5k          |       35 µs |     178 ms | 50.85 |     29 KB |    28K ops/s |
-| hmac_sha256() 5k             |       21 µs |     107 ms | 30.57 |     26 KB |    46K ops/s |
-| b64url_encode + decode 20k   |        4 µs |      89 ms |  6.35 |         - |   224K ops/s |
-```
-
----
-
 ## 📖 API Reference
 
 ### Core Functions
@@ -230,17 +207,36 @@ Measurements   : 6 methods
 
 ---
 
-## 🧪 Running Tests & Benchmarks
+## 🧪 Running Tests, Benchmarks & Documentation
+
+Run the automated test suite using `alya test`:
 
 ```bash
-# Run test suite
-alya run tests/test_basic.alya
+alya test
+```
 
-# Run benchmarks
+Generate static API documentation:
+
+```bash
+alya doc . -o docs --markdown
+```
+
+Run the benchmark suite:
+
+```bash
 alya run benches/bench_basic.alya
+```
 
-# Run real-world authentication demo
+Run the example demo:
+
+```bash
 alya run examples/demo.alya
+```
+
+Check code formatting:
+
+```bash
+alya fmt . --check
 ```
 
 ---
