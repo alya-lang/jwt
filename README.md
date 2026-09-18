@@ -61,8 +61,8 @@ jwt = { git = "https://github.com/alya-lang/jwt", branch = "main" }
 Or install it directly using the Alya package CLI:
 
 ```bash
-alyac add jwt --git https://github.com/alya-lang/jwt --branch main
-alyac install
+alya add jwt --git https://github.com/alya-lang/jwt --branch main
+alya install
 ```
 
 ---
@@ -166,7 +166,7 @@ main()
 
 ## ⚡ Benchmarks
 
-Executed on Windows 11 (AMD Ryzen / Intel x86_64, `alyac 0.0.6`):
+Executed on Windows 11 (AMD Ryzen / Intel x86_64, `alya 0.0.6`):
 
 ```
 Benchmark Suite: jwt Micro-Benchmarks (RFC 7519)
@@ -234,13 +234,13 @@ Measurements   : 6 methods
 
 ```bash
 # Run test suite
-alyac run tests/test_basic.alya
+alya run tests/test_basic.alya
 
 # Run benchmarks
-alyac run benches/bench_basic.alya
+alya run benches/bench_basic.alya
 
 # Run real-world authentication demo
-alyac run examples/demo.alya
+alya run examples/demo.alya
 ```
 
 ---
@@ -252,13 +252,13 @@ Contributions are welcome! Please follow these steps:
 1. Fork the repository and clone it locally
 2. Install dependencies:
    ```bash
-   alyac install
+   alya install
    ```
 3. Create your feature branch (`git checkout -b feature/my-feature`)
 4. Verify tests and formatting before opening a PR:
    ```bash
-   alyac test
-   alyac fmt . --check
+   alya test
+   alya fmt . --check
    ```
 5. Commit your changes (`git commit -m "feat: add feature"`) and open a Pull Request
 
