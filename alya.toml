@@ -1,6 +1,6 @@
 [package]
 name = "jwt"
-version = "0.6.0"
+version = "0.1.0"
 alya-version = "0.0.18"
 entry = "src/lib.alya"
 description = "JSON Web Token (RFC 7519) library for Alya backed by alya-lang/crypto"
@@ -11,4 +11,4 @@ repository = "https://github.com/alya-lang/jwt"
 keywords = ["alya", "alya-lang", "package", "jwt", "token", "auth", "security", "crypto"]
 
 [dependencies]
-crypto = { git = "https://github.com/alya-lang/crypto", tag = "v0.6.0" }
+crypto = { git = "https://github.com/alya-lang/crypto", tag = "v0.1.0" }
