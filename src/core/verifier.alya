@@ -2,8 +2,9 @@
 # Part of the Alya Language package ecosystem (https://github.com/alya-lang)
 
 import "std/time"
-import "../types.alya"
 
+## Verifies standard JWT claims (exp, nbf, iss, aud) with respect to leeway and options.
+## Returns an error message if verification fails, or an empty string "" if valid.
 pub function verify_claims(payload, options)
     let opts = options
     let current_sec = if opts.current_time == 0 then time() else opts.current_time

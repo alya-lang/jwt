@@ -12,7 +12,7 @@ import "std/time"
 # Struct Methods
 # ═══════════════════════════════════════════════════════════════
 
-# Signs the builder's accumulated claims with secret
+## Signs the builder's accumulated claims with secret.
 pub function JwtBuilder.sign(self, secret)
     return encode_raw(builder_to_json(self), secret)
 end
@@ -54,7 +54,7 @@ end
 # Public API Facade
 # ═══════════════════════════════════════════════════════════════
 
-# Encodes raw JSON payload string and signs with secret.
+## Encodes raw JSON payload string and signs with secret using HS256.
 pub function encode_raw(payload_json_str, secret, header_json_str = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}")
     let header_b64 = crypto::base64url_encode(header_json_str)
     let payload_b64 = crypto::base64url_encode(payload_json_str)
@@ -68,20 +68,20 @@ pub function encode_raw(payload_json_str, secret, header_json_str = "{\"alg\":\"
     return signing_input + "." + sig_b64
 end
 
-# Encodes a Map payload and signs it with secret using HMAC-SHA256 (HS256).
+## Encodes a Map payload and signs it with secret using HMAC-SHA256 (HS256).
 pub function encode(payload, secret)
     let payload_json = _map_to_json(payload)
     return encode_raw(payload_json, secret)
 end
 
-# Encodes a Map payload with custom header map and signs with secret.
+## Encodes a Map payload with custom header map and signs with secret.
 pub function encode_with_header(payload, secret, custom_header)
     let header_json = _map_to_json(custom_header)
     let payload_json = _map_to_json(payload)
     return encode_raw(payload_json, secret, header_json)
 end
 
-# Convenient helper: creates token with auto-populated 'iat' and 'exp' claims from a Map.
+## Creates a token with auto-populated 'iat' and 'exp' claims from a Map payload.
 pub function sign(payload, secret, expires_in_sec = 3600)
     let b = builder()
     let now_sec = time()
@@ -100,7 +100,7 @@ pub function sign(payload, secret, expires_in_sec = 3600)
     return builder_sign(b, secret)
 end
 
-# Decodes a JWT token without signature verification into a JwtToken struct.
+## Decodes a JWT token without signature verification into a JwtToken struct.
 pub function decode(token)
     let parts = split_parts(token)
     if len(parts) != 3
@@ -121,7 +121,7 @@ pub function decode(token)
     return jwt_token_new(token, header, payload, signature, 1, "")
 end
 
-# Verifies HMAC-SHA256 signature and validates standard claims with custom options.
+## Verifies HMAC-SHA256 signature and validates standard claims with custom options.
 pub function verify_with_options(token, secret, options)
     let parts = split_parts(token)
     if len(parts) != 3
@@ -174,25 +174,25 @@ pub function verify_with_options(token, secret, options)
     return jwt_token_new(token, header, payload, signature, 1, "")
 end
 
-# Verifies HMAC-SHA256 signature and standard claims using default options.
+## Verifies HMAC-SHA256 signature and standard claims using default options.
 pub function verify(token, secret)
     let default_opts = jwt_options_new()
     return verify_with_options(token, secret, default_opts)
 end
 
-# Returns 1 if token signature and claims are valid, 0 otherwise.
+## Returns 1 if token signature and claims are valid, 0 otherwise.
 pub function is_valid(token, secret)
     let res = verify(token, secret)
     return res.valid == 1
 end
 
-# Returns 1 if token signature and claims match given options, 0 otherwise.
+## Returns 1 if token signature and claims match given options, 0 otherwise.
 pub function is_valid_with_options(token, secret, options)
     let res = verify_with_options(token, secret, options)
     return res.valid == 1
 end
 
-# Returns 1 if token is expired (now > exp), 0 otherwise.
+## Returns 1 if token is expired (now > exp), 0 otherwise.
 pub function is_expired(token)
     let t = decode(token)
     if t.valid == 0
@@ -204,7 +204,7 @@ pub function is_expired(token)
     return 0
 end
 
-# Extracts a specific claim from token payload without full signature verification.
+## Extracts a specific claim from token payload without full signature verification.
 pub function get_claim(token, claim_name)
     let t = decode(token)
     if t.valid == 1 and t.payload is not null and (claim_name in t.payload)
@@ -213,12 +213,12 @@ pub function get_claim(token, claim_name)
     return null
 end
 
-# Creates a JwtVerifyOptions configuration struct.
+## Creates a JwtVerifyOptions configuration struct.
 pub function options(leeway = 0, issuer = "", audience = "", ignore_expiration = 0, current_time = 0)
     return jwt_options_new(leeway, issuer, audience, ignore_expiration, current_time)
 end
 
-# Helper to sign using a builder instance.
+## Signs using an assembled JwtBuilder instance.
 pub function builder_sign(b, secret)
     return encode_raw(builder_to_json(b), secret)
 end
@@ -227,18 +227,22 @@ end
 # Exported Low-Level Utilities
 # ═══════════════════════════════════════════════════════════════
 
+## Computes SHA-256 hex digest of string message.
 pub function sha256(msg)
     return crypto::sha256(msg)
 end
 
+## Computes HMAC-SHA256 hex digest using secret key.
 pub function hmac_sha256(secret, msg)
     return crypto::hmac_sha256(secret, msg)
 end
 
+## Encodes a string to RFC 7515 Base64URL string without padding.
 pub function b64url_encode(s)
     return crypto::base64url_encode(s)
 end
 
+## Decodes an RFC 7515 Base64URL string.
 pub function b64url_decode(s)
     return crypto::base64url_decode(s)
 end

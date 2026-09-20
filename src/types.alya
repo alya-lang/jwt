@@ -1,14 +1,28 @@
 # Types and data structures for jwt package
 # Part of the Alya Language package ecosystem (https://github.com/alya-lang)
 
-# Public enumeration of supported JWT algorithms
+## Public enumeration of supported JWT algorithms.
 pub enum JwtAlgorithm
     HS256 = 1,
     HS384 = 2,
     HS512 = 3
 end
 
-# Public JWT token representation
+## Public enumeration of standard JWT error codes.
+pub enum JwtErrorCode
+    NONE = 0,
+    MALFORMED_TOKEN = 1,
+    MALFORMED_JSON = 2,
+    MISSING_ALG = 3,
+    UNSUPPORTED_ALG = 4,
+    INVALID_SIGNATURE = 5,
+    TOKEN_EXPIRED = 6,
+    TOKEN_NOT_YET_VALID = 7,
+    INVALID_ISSUER = 8,
+    INVALID_AUDIENCE = 9
+end
+
+## Public JWT token representation containing decoded parts, verification status, and error message.
 pub struct JwtToken
     raw,
     header,
@@ -18,12 +32,12 @@ pub struct JwtToken
     error
 end
 
-# Struct method: checks if token is valid
+## Struct method: checks if token is valid.
 pub function JwtToken.is_valid(self)
     return self.valid == 1
 end
 
-# Struct method: retrieves a claim value if present
+## Struct method: retrieves a claim value if present.
 pub function JwtToken.get_claim(self, claim_name)
     if self.valid == 1 and self.payload is not null and (claim_name in self.payload)
         return str_from_ptr(self.payload[claim_name])
@@ -31,7 +45,7 @@ pub function JwtToken.get_claim(self, claim_name)
     return null
 end
 
-# Public verification options model
+## Public verification options model.
 pub struct JwtVerifyOptions
     leeway,
     issuer,
@@ -40,25 +54,25 @@ pub struct JwtVerifyOptions
     current_time
 end
 
-# Struct method: sets custom leeway in seconds
+## Struct method: sets custom leeway in seconds.
 pub function JwtVerifyOptions.with_leeway(self, sec)
     self.leeway = sec
     return self
 end
 
-# Struct method: sets expected issuer
+## Struct method: sets expected issuer.
 pub function JwtVerifyOptions.with_issuer(self, iss)
     self.issuer = iss
     return self
 end
 
-# Struct method: sets expected audience
+## Struct method: sets expected audience.
 pub function JwtVerifyOptions.with_audience(self, aud)
     self.audience = aud
     return self
 end
 
-# Public token constructor factory
+## Public token constructor factory.
 pub function jwt_token_new(raw, header, payload, signature, valid = 1, error = "")
     return JwtToken {
         raw: raw,
@@ -70,7 +84,7 @@ pub function jwt_token_new(raw, header, payload, signature, valid = 1, error = "
     }
 end
 
-# Public verification options factory
+## Public verification options factory.
 pub function jwt_options_new(leeway = 0, issuer = "", audience = "", ignore_expiration = 0, current_time = 0)
     return JwtVerifyOptions {
         leeway: leeway,
@@ -109,7 +123,7 @@ function _jwt_trim(s)
     return substring(s, start_idx, end_idx - start_idx + 1)
 end
 
-# Public token string splitter (splits header.payload.signature)
+## Public token string splitter (splits header.payload.signature).
 pub function split_parts(token)
     let s = _jwt_trim(token)
     let slen = len(s)

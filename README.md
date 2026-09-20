@@ -39,7 +39,7 @@ jwt/
 ├── examples/
 │   └── demo.alya           # Full end-to-end authentication workflow
 ├── tests/
-│   └── test_basic.alya     # 35 test assertions (NIST vectors, tamper tests)
+│   └── test_basic.alya     # 48 test assertions (NIST vectors, tamper tests)
 └── benches/
     └── bench_basic.alya    # Micro-benchmarks
 ```
@@ -162,6 +162,16 @@ main()
 ---
 
 ## 📖 API Reference
+
+### Enums & Types
+
+| Symbol | Type | Description |
+|---|---|---|
+| `JwtAlgorithm` | `enum` | Supported signing algorithms (`HS256`, `HS384`, `HS512`). |
+| `JwtErrorCode` | `enum` | Standard verification error codes (`NONE`, `MALFORMED_TOKEN`, `INVALID_SIGNATURE`, etc.). |
+| `JwtToken` | `struct` | Decoded token struct containing `raw`, `header`, `payload`, `signature`, `valid`, and `error`. |
+| `JwtVerifyOptions` | `struct` | Options model with builder methods (`with_leeway`, `with_issuer`, `with_audience`). |
+| `JwtBuilder` | `struct` | Fluent builder struct for constructing claims and signing tokens. |
 
 ### Core Functions
 

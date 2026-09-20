@@ -4,7 +4,7 @@
 import "std/time"
 import "std/json"
 
-# Public builder struct for fluid JWT construction
+## Public builder struct for fluid JWT construction.
 pub struct JwtBuilder
     claims_str,
     claim_count
@@ -77,50 +77,62 @@ end
 # Struct Methods on JwtBuilder
 # ═══════════════════════════════════════════════════════════════
 
+## Adds a string key-value claim to the builder.
 pub function JwtBuilder.claim_str(self, key, val)
     return _builder_claim_str(self, key, val)
 end
 
+## Adds an integer key-value claim to the builder.
 pub function JwtBuilder.claim_int(self, key, val)
     return _builder_claim_int(self, key, val)
 end
 
+## Adds a boolean key-value claim to the builder (1 = true, 0 = false).
 pub function JwtBuilder.claim_bool(self, key, val)
     return _builder_claim_bool(self, key, val)
 end
 
+## Sets the standard 'sub' (subject) claim.
 pub function JwtBuilder.subject(self, sub)
     return _builder_subject(self, sub)
 end
 
+## Sets the standard 'iss' (issuer) claim.
 pub function JwtBuilder.issuer(self, iss)
     return _builder_issuer(self, iss)
 end
 
+## Sets the standard 'aud' (audience) claim.
 pub function JwtBuilder.audience(self, aud)
     return _builder_audience(self, aud)
 end
 
+## Sets the standard 'iat' (issued at) claim. Defaults to current unix timestamp.
 pub function JwtBuilder.issued_at(self, iat_sec = 0)
     return _builder_issued_at(self, iat_sec)
 end
 
+## Sets the standard 'exp' (expires at) timestamp claim.
 pub function JwtBuilder.expires_at(self, exp_timestamp)
     return _builder_expires_at(self, exp_timestamp)
 end
 
+## Sets the standard 'iat' to now and 'exp' to now + duration_sec.
 pub function JwtBuilder.expires_in(self, duration_sec)
     return _builder_expires_in(self, duration_sec)
 end
 
+## Sets the standard 'nbf' (not before) timestamp claim.
 pub function JwtBuilder.not_before(self, nbf_timestamp)
     return _builder_not_before(self, nbf_timestamp)
 end
 
+## Sets the standard 'jti' (JWT ID) unique identifier claim.
 pub function JwtBuilder.jwt_id(self, jti)
     return _builder_jwt_id(self, jti)
 end
 
+## Serializes the builder claims to a JSON object string.
 pub function JwtBuilder.to_json(self)
     return _builder_to_json(self)
 end
@@ -129,6 +141,7 @@ end
 # Public Constructor & Helpers
 # ═══════════════════════════════════════════════════════════════
 
+## Creates a new empty JwtBuilder instance.
 pub function builder()
     return JwtBuilder {
         claims_str: "",
@@ -136,50 +149,62 @@ pub function builder()
     }
 end
 
+## Adds a string key-value claim to the builder.
 pub function builder_claim_str(b, key, val)
     return _builder_claim_str(b, key, val)
 end
 
+## Adds an integer key-value claim to the builder.
 pub function builder_claim_int(b, key, val)
     return _builder_claim_int(b, key, val)
 end
 
+## Adds a boolean key-value claim to the builder (1 = true, 0 = false).
 pub function builder_claim_bool(b, key, val)
     return _builder_claim_bool(b, key, val)
 end
 
+## Sets the standard 'sub' (subject) claim on the builder.
 pub function builder_subject(b, sub)
     return _builder_subject(b, sub)
 end
 
+## Sets the standard 'iss' (issuer) claim on the builder.
 pub function builder_issuer(b, iss)
     return _builder_issuer(b, iss)
 end
 
+## Sets the standard 'aud' (audience) claim on the builder.
 pub function builder_audience(b, aud)
     return _builder_audience(b, aud)
 end
 
+## Sets the standard 'iat' (issued at) claim on the builder.
 pub function builder_issued_at(b, iat_sec = 0)
     return _builder_issued_at(b, iat_sec)
 end
 
+## Sets the standard 'exp' (expires at) timestamp claim on the builder.
 pub function builder_expires_at(b, exp_timestamp)
     return _builder_expires_at(b, exp_timestamp)
 end
 
+## Sets the standard 'iat' to now and 'exp' to now + duration_sec on the builder.
 pub function builder_expires_in(b, duration_sec)
     return _builder_expires_in(b, duration_sec)
 end
 
+## Sets the standard 'nbf' (not before) timestamp claim on the builder.
 pub function builder_not_before(b, nbf_timestamp)
     return _builder_not_before(b, nbf_timestamp)
 end
 
+## Sets the standard 'jti' (JWT ID) unique identifier claim on the builder.
 pub function builder_jwt_id(b, jti)
     return _builder_jwt_id(b, jti)
 end
 
+## Serializes the builder claims to a JSON object string.
 pub function builder_to_json(b)
     return _builder_to_json(b)
 end
