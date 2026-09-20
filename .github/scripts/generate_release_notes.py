@@ -95,7 +95,7 @@ def main():
             tag = run_git(["describe", "--tags", "--abbrev=0"], check=False)
 
     if not tag:
-        tag = "v0.3.0"
+        tag = "v0.1.0"
 
     version = tag.lstrip("v")
 
@@ -110,7 +110,7 @@ def main():
             pkg_name = Path.cwd().name
 
     description = pkg_meta.get("description", "A modern package for the Alya programming language")
-    alya_version = pkg_meta.get("alya-version", "0.0.18")
+    alya_version = pkg_meta.get("alya-version", "0.0.19")
 
     # Resolve Repository Slug (e.g. alya-lang/toml)
     repo = os.environ.get("GITHUB_REPOSITORY", "")
