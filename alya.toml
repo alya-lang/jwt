@@ -12,3 +12,7 @@ keywords = ["alya", "alya-lang", "package", "jwt", "token", "auth", "security", 
 
 [dependencies]
 crypto = { git = "https://github.com/alya-lang/crypto", tag = "v0.1.0" }
+
+# [lint]
+# disabled_rules = []
+# exclude = []
