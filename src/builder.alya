@@ -1,19 +1,27 @@
-# JWT Fluent Builder API
-# Part of the Alya Language package ecosystem (https://github.com/alya-lang)
+## # jwt/builder
+##
+## JWT fluent builder API.
+## Part of the Alya Language package ecosystem (https://github.com/alya-lang).
+##
+## Accumulates claims into a JSON object string for signing.
 
 import "std/time"
 import "std/json"
 
 ## Public builder struct for fluid JWT construction.
+##
+## ### Fields
+## - `claims_str`: Accumulated raw claim entries string.
+## - `claim_count`: Number of appended claims.
 pub struct JwtBuilder
-    claims_str,
-    claim_count
+    claims_str: string,
+    claim_count: int
 end
 
-# Internal raw claim appender (private to module)
-function _builder_add_raw(b, pair_str)
+# Internal raw claim appender (private to module).
+function _builder_add_raw(b: JwtBuilder, pair_str: string) -> JwtBuilder
     if b.claim_count > 0
-        b.claims_str += ", " + pair_str
+        b.claims_str += ", {pair_str}"
     else
         b.claims_str = pair_str
     end
@@ -21,55 +29,71 @@ function _builder_add_raw(b, pair_str)
     return b
 end
 
-function _builder_claim_str(b, key, val)
-    return _builder_add_raw(b, "\"" + json_escape(key) + "\": \"" + json_escape(val) + "\"")
+# Internal string claim appender (private to module).
+function _builder_claim_str(b: JwtBuilder, key: string, val: string) -> JwtBuilder
+    let ek = json_escape(key)
+    let ev = json_escape(val)
+    return _builder_add_raw(b, "\"{ek}\": \"{ev}\"")
 end
 
-function _builder_claim_int(b, key, val)
-    return _builder_add_raw(b, "\"" + json_escape(key) + "\": " + str(val))
+# Internal integer claim appender (private to module).
+function _builder_claim_int(b: JwtBuilder, key: string, val: int) -> JwtBuilder
+    let ek = json_escape(key)
+    return _builder_add_raw(b, "\"{ek}\": {val}")
 end
 
-function _builder_claim_bool(b, key, val)
+# Internal boolean claim appender (private to module).
+function _builder_claim_bool(b: JwtBuilder, key: string, val: int) -> JwtBuilder
     let s = if val == 1 then "true" else "false"
-    return _builder_add_raw(b, "\"" + json_escape(key) + "\": " + s)
+    let ek = json_escape(key)
+    return _builder_add_raw(b, "\"{ek}\": {s}")
 end
 
-function _builder_subject(b, sub)
+# Internal subject claim setter (private to module).
+function _builder_subject(b: JwtBuilder, sub: string) -> JwtBuilder
     return _builder_claim_str(b, "sub", sub)
 end
 
-function _builder_issuer(b, iss)
+# Internal issuer claim setter (private to module).
+function _builder_issuer(b: JwtBuilder, iss: string) -> JwtBuilder
     return _builder_claim_str(b, "iss", iss)
 end
 
-function _builder_audience(b, aud)
+# Internal audience claim setter (private to module).
+function _builder_audience(b: JwtBuilder, aud: string) -> JwtBuilder
     return _builder_claim_str(b, "aud", aud)
 end
 
-function _builder_issued_at(b, iat_sec = 0)
+# Internal issued-at claim setter (private to module).
+function _builder_issued_at(b: JwtBuilder, iat_sec: int = 0) -> JwtBuilder
     let t = if iat_sec == 0 then time() else iat_sec
     return _builder_claim_int(b, "iat", t)
 end
 
-function _builder_expires_at(b, exp_timestamp)
+# Internal expiry claim setter (private to module).
+function _builder_expires_at(b: JwtBuilder, exp_timestamp: int) -> JwtBuilder
     return _builder_claim_int(b, "exp", exp_timestamp)
 end
 
-function _builder_expires_in(b, duration_sec)
+# Internal issued-at plus expiry setter (private to module).
+function _builder_expires_in(b: JwtBuilder, duration_sec: int) -> JwtBuilder
     let now_sec = time()
     _builder_issued_at(b, now_sec)
     return _builder_expires_at(b, now_sec + duration_sec)
 end
 
-function _builder_not_before(b, nbf_timestamp)
+# Internal not-before claim setter (private to module).
+function _builder_not_before(b: JwtBuilder, nbf_timestamp: int) -> JwtBuilder
     return _builder_claim_int(b, "nbf", nbf_timestamp)
 end
 
-function _builder_jwt_id(b, jti)
+# Internal JWT ID claim setter (private to module).
+function _builder_jwt_id(b: JwtBuilder, jti: string) -> JwtBuilder
     return _builder_claim_str(b, "jti", jti)
 end
 
-function _builder_to_json(b)
+# Internal builder serializer (private to module).
+function _builder_to_json(b: JwtBuilder) -> string
     return "{" + b.claims_str + "}"
 end
 
@@ -78,62 +102,148 @@ end
 # ═══════════════════════════════════════════════════════════════
 
 ## Adds a string key-value claim to the builder.
-pub function JwtBuilder.claim_str(self, key, val)
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `key`: Claim key string.
+## - `val`: Claim value string.
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.claim_str(self: JwtBuilder, key: string, val: string) -> JwtBuilder
     return _builder_claim_str(self, key, val)
 end
 
 ## Adds an integer key-value claim to the builder.
-pub function JwtBuilder.claim_int(self, key, val)
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `key`: Claim key string.
+## - `val`: Claim value integer.
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.claim_int(self: JwtBuilder, key: string, val: int) -> JwtBuilder
     return _builder_claim_int(self, key, val)
 end
 
-## Adds a boolean key-value claim to the builder (1 = true, 0 = false).
-pub function JwtBuilder.claim_bool(self, key, val)
+## Adds a boolean key-value claim to the builder (`1` is true).
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `key`: Claim key string.
+## - `val`: Claim flag integer.
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.claim_bool(self: JwtBuilder, key: string, val: int) -> JwtBuilder
     return _builder_claim_bool(self, key, val)
 end
 
-## Sets the standard 'sub' (subject) claim.
-pub function JwtBuilder.subject(self, sub)
+## Sets the standard `sub` (subject) claim.
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `sub`: Subject string.
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.subject(self: JwtBuilder, sub: string) -> JwtBuilder
     return _builder_subject(self, sub)
 end
 
-## Sets the standard 'iss' (issuer) claim.
-pub function JwtBuilder.issuer(self, iss)
+## Sets the standard `iss` (issuer) claim.
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `iss`: Issuer string.
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.issuer(self: JwtBuilder, iss: string) -> JwtBuilder
     return _builder_issuer(self, iss)
 end
 
-## Sets the standard 'aud' (audience) claim.
-pub function JwtBuilder.audience(self, aud)
+## Sets the standard `aud` (audience) claim.
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `aud`: Audience string.
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.audience(self: JwtBuilder, aud: string) -> JwtBuilder
     return _builder_audience(self, aud)
 end
 
-## Sets the standard 'iat' (issued at) claim. Defaults to current unix timestamp.
-pub function JwtBuilder.issued_at(self, iat_sec = 0)
+## Sets the standard `iat` claim, defaulting to the current unix time.
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `iat_sec`: Issued-at timestamp. Defaults to `0` (now).
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.issued_at(self: JwtBuilder, iat_sec: int = 0) -> JwtBuilder
     return _builder_issued_at(self, iat_sec)
 end
 
-## Sets the standard 'exp' (expires at) timestamp claim.
-pub function JwtBuilder.expires_at(self, exp_timestamp)
+## Sets the standard `exp` (expires at) timestamp claim.
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `exp_timestamp`: Expiry timestamp integer.
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.expires_at(self: JwtBuilder, exp_timestamp: int) -> JwtBuilder
     return _builder_expires_at(self, exp_timestamp)
 end
 
-## Sets the standard 'iat' to now and 'exp' to now + duration_sec.
-pub function JwtBuilder.expires_in(self, duration_sec)
+## Sets `iat` to now and `exp` to now plus a duration.
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `duration_sec`: Lifetime seconds integer.
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.expires_in(self: JwtBuilder, duration_sec: int) -> JwtBuilder
     return _builder_expires_in(self, duration_sec)
 end
 
-## Sets the standard 'nbf' (not before) timestamp claim.
-pub function JwtBuilder.not_before(self, nbf_timestamp)
+## Sets the standard `nbf` (not before) timestamp claim.
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `nbf_timestamp`: Not-before timestamp integer.
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.not_before(self: JwtBuilder, nbf_timestamp: int) -> JwtBuilder
     return _builder_not_before(self, nbf_timestamp)
 end
 
-## Sets the standard 'jti' (JWT ID) unique identifier claim.
-pub function JwtBuilder.jwt_id(self, jti)
+## Sets the standard `jti` (JWT ID) unique identifier claim.
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+## - `jti`: Identifier string.
+##
+## ### Returns
+## The updated builder instance.
+pub function JwtBuilder.jwt_id(self: JwtBuilder, jti: string) -> JwtBuilder
     return _builder_jwt_id(self, jti)
 end
 
 ## Serializes the builder claims to a JSON object string.
-pub function JwtBuilder.to_json(self)
+##
+## ### Parameters
+## - `self`: The target `JwtBuilder` instance.
+##
+## ### Returns
+## The JSON object string.
+pub function JwtBuilder.to_json(self: JwtBuilder) -> string
     return _builder_to_json(self)
 end
 
@@ -142,7 +252,10 @@ end
 # ═══════════════════════════════════════════════════════════════
 
 ## Creates a new empty JwtBuilder instance.
-pub function builder()
+##
+## ### Returns
+## The new `JwtBuilder` instance.
+pub function builder() -> JwtBuilder
     return JwtBuilder {
         claims_str: "",
         claim_count: 0
@@ -150,61 +263,147 @@ pub function builder()
 end
 
 ## Adds a string key-value claim to the builder.
-pub function builder_claim_str(b, key, val)
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `key`: Claim key string.
+## - `val`: Claim value string.
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_claim_str(b: JwtBuilder, key: string, val: string) -> JwtBuilder
     return _builder_claim_str(b, key, val)
 end
 
 ## Adds an integer key-value claim to the builder.
-pub function builder_claim_int(b, key, val)
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `key`: Claim key string.
+## - `val`: Claim value integer.
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_claim_int(b: JwtBuilder, key: string, val: int) -> JwtBuilder
     return _builder_claim_int(b, key, val)
 end
 
-## Adds a boolean key-value claim to the builder (1 = true, 0 = false).
-pub function builder_claim_bool(b, key, val)
+## Adds a boolean key-value claim to the builder (`1` is true).
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `key`: Claim key string.
+## - `val`: Claim flag integer.
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_claim_bool(b: JwtBuilder, key: string, val: int) -> JwtBuilder
     return _builder_claim_bool(b, key, val)
 end
 
-## Sets the standard 'sub' (subject) claim on the builder.
-pub function builder_subject(b, sub)
+## Sets the standard `sub` (subject) claim on the builder.
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `sub`: Subject string.
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_subject(b: JwtBuilder, sub: string) -> JwtBuilder
     return _builder_subject(b, sub)
 end
 
-## Sets the standard 'iss' (issuer) claim on the builder.
-pub function builder_issuer(b, iss)
+## Sets the standard `iss` (issuer) claim on the builder.
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `iss`: Issuer string.
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_issuer(b: JwtBuilder, iss: string) -> JwtBuilder
     return _builder_issuer(b, iss)
 end
 
-## Sets the standard 'aud' (audience) claim on the builder.
-pub function builder_audience(b, aud)
+## Sets the standard `aud` (audience) claim on the builder.
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `aud`: Audience string.
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_audience(b: JwtBuilder, aud: string) -> JwtBuilder
     return _builder_audience(b, aud)
 end
 
-## Sets the standard 'iat' (issued at) claim on the builder.
-pub function builder_issued_at(b, iat_sec = 0)
+## Sets the standard `iat` (issued at) claim on the builder.
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `iat_sec`: Issued-at timestamp. Defaults to `0` (now).
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_issued_at(b: JwtBuilder, iat_sec: int = 0) -> JwtBuilder
     return _builder_issued_at(b, iat_sec)
 end
 
-## Sets the standard 'exp' (expires at) timestamp claim on the builder.
-pub function builder_expires_at(b, exp_timestamp)
+## Sets the standard `exp` (expires at) timestamp claim on the builder.
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `exp_timestamp`: Expiry timestamp integer.
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_expires_at(b: JwtBuilder, exp_timestamp: int) -> JwtBuilder
     return _builder_expires_at(b, exp_timestamp)
 end
 
-## Sets the standard 'iat' to now and 'exp' to now + duration_sec on the builder.
-pub function builder_expires_in(b, duration_sec)
+## Sets `iat` to now and `exp` to now plus a duration on the builder.
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `duration_sec`: Lifetime seconds integer.
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_expires_in(b: JwtBuilder, duration_sec: int) -> JwtBuilder
     return _builder_expires_in(b, duration_sec)
 end
 
-## Sets the standard 'nbf' (not before) timestamp claim on the builder.
-pub function builder_not_before(b, nbf_timestamp)
+## Sets the standard `nbf` (not before) timestamp claim on the builder.
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `nbf_timestamp`: Not-before timestamp integer.
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_not_before(b: JwtBuilder, nbf_timestamp: int) -> JwtBuilder
     return _builder_not_before(b, nbf_timestamp)
 end
 
-## Sets the standard 'jti' (JWT ID) unique identifier claim on the builder.
-pub function builder_jwt_id(b, jti)
+## Sets the standard `jti` (JWT ID) unique identifier claim on the builder.
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+## - `jti`: Identifier string.
+##
+## ### Returns
+## The updated builder instance.
+pub function builder_jwt_id(b: JwtBuilder, jti: string) -> JwtBuilder
     return _builder_jwt_id(b, jti)
 end
 
 ## Serializes the builder claims to a JSON object string.
-pub function builder_to_json(b)
+##
+## ### Parameters
+## - `b`: Target `JwtBuilder` instance.
+##
+## ### Returns
+## The JSON object string.
+pub function builder_to_json(b: JwtBuilder) -> string
     return _builder_to_json(b)
 end

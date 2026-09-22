@@ -1,5 +1,10 @@
-# Types and data structures for jwt package
-# Part of the Alya Language package ecosystem (https://github.com/alya-lang)
+## # jwt/types
+##
+## Types and data structures for the jwt package.
+## Part of the Alya Language package ecosystem (https://github.com/alya-lang).
+##
+## Defines algorithm and error discriminators, the decoded token model,
+## verification options, and token parsing helpers.
 
 ## Public enumeration of supported JWT algorithms.
 pub enum JwtAlgorithm
@@ -22,23 +27,44 @@ pub enum JwtErrorCode
     INVALID_AUDIENCE = 9
 end
 
-## Public JWT token representation containing decoded parts, verification status, and error message.
+## Public JWT token representation with decoded parts and status.
+##
+## ### Fields
+## - `raw`: Original token string.
+## - `header`: Decoded header map (or null when malformed).
+## - `payload`: Decoded payload map (or null when malformed).
+## - `signature`: Signature segment string.
+## - `valid`: `1` when verified, `0` otherwise.
+## - `error`: Error message string (empty when valid).
 pub struct JwtToken
-    raw,
+    raw: string,
     header,
     payload,
-    signature,
-    valid,
-    error
+    signature: string,
+    valid: int,
+    error: string
 end
 
-## Struct method: checks if token is valid.
-pub function JwtToken.is_valid(self)
+## Checks whether this token is valid.
+##
+## ### Parameters
+## - `self`: The target `JwtToken` instance.
+##
+## ### Returns
+## `1` when valid, `0` otherwise.
+pub function JwtToken.is_valid(self: JwtToken) -> int
     return self.valid == 1
 end
 
-## Struct method: retrieves a claim value if present.
-pub function JwtToken.get_claim(self, claim_name)
+## Retrieves a claim value when present on a valid token.
+##
+## ### Parameters
+## - `self`: The target `JwtToken` instance.
+## - `claim_name`: Claim key string.
+##
+## ### Returns
+## The claim string, or null when missing or invalid.
+pub function JwtToken.get_claim(self: JwtToken, claim_name: string)
     if self.valid == 1 and self.payload is not null and (claim_name in self.payload)
         return str_from_ptr(self.payload[claim_name])
     end
@@ -46,34 +72,73 @@ pub function JwtToken.get_claim(self, claim_name)
 end
 
 ## Public verification options model.
+##
+## ### Fields
+## - `leeway`: Clock-skew tolerance in seconds.
+## - `issuer`: Expected issuer string (empty disables the check).
+## - `audience`: Expected audience string (empty disables the check).
+## - `ignore_expiration`: `1` skips expiry validation, `0` enforces it.
+## - `current_time`: Override unix time (`0` uses system time).
 pub struct JwtVerifyOptions
-    leeway,
-    issuer,
-    audience,
-    ignore_expiration,
-    current_time
+    leeway: int,
+    issuer: string,
+    audience: string,
+    ignore_expiration: int,
+    current_time: int
 end
 
-## Struct method: sets custom leeway in seconds.
-pub function JwtVerifyOptions.with_leeway(self, sec)
+## Sets a custom leeway in seconds, returning the updated options.
+##
+## ### Parameters
+## - `self`: The target `JwtVerifyOptions` instance.
+## - `sec`: Leeway seconds integer.
+##
+## ### Returns
+## The updated options instance.
+pub function JwtVerifyOptions.with_leeway(self: JwtVerifyOptions, sec: int) -> JwtVerifyOptions
     self.leeway = sec
     return self
 end
 
-## Struct method: sets expected issuer.
-pub function JwtVerifyOptions.with_issuer(self, iss)
+## Sets the expected issuer, returning the updated options.
+##
+## ### Parameters
+## - `self`: The target `JwtVerifyOptions` instance.
+## - `iss`: Issuer string.
+##
+## ### Returns
+## The updated options instance.
+pub function JwtVerifyOptions.with_issuer(self: JwtVerifyOptions, iss: string) -> JwtVerifyOptions
     self.issuer = iss
     return self
 end
 
-## Struct method: sets expected audience.
-pub function JwtVerifyOptions.with_audience(self, aud)
+## Sets the expected audience, returning the updated options.
+##
+## ### Parameters
+## - `self`: The target `JwtVerifyOptions` instance.
+## - `aud`: Audience string.
+##
+## ### Returns
+## The updated options instance.
+pub function JwtVerifyOptions.with_audience(self: JwtVerifyOptions, aud: string) -> JwtVerifyOptions
     self.audience = aud
     return self
 end
 
-## Public token constructor factory.
-pub function jwt_token_new(raw, header, payload, signature, valid = 1, error = "")
+## Factory constructing a `JwtToken` from decoded parts.
+##
+## ### Parameters
+## - `raw`: Original token string.
+## - `header`: Decoded header map (or null).
+## - `payload`: Decoded payload map (or null).
+## - `signature`: Signature segment string.
+## - `valid`: `1` when verified. Defaults to `1`.
+## - `error`: Error message. Defaults to `""`.
+##
+## ### Returns
+## The new `JwtToken` instance.
+pub function jwt_token_new(raw: string, header, payload, signature: string, valid: int = 1, error: string = "") -> JwtToken
     return JwtToken {
         raw: raw,
         header: header,
@@ -84,8 +149,18 @@ pub function jwt_token_new(raw, header, payload, signature, valid = 1, error = "
     }
 end
 
-## Public verification options factory.
-pub function jwt_options_new(leeway = 0, issuer = "", audience = "", ignore_expiration = 0, current_time = 0)
+## Factory constructing verification options with sensible defaults.
+##
+## ### Parameters
+## - `leeway`: Clock-skew tolerance. Defaults to `0`.
+## - `issuer`: Expected issuer. Defaults to `""`.
+## - `audience`: Expected audience. Defaults to `""`.
+## - `ignore_expiration`: `1` skips expiry validation. Defaults to `0`.
+## - `current_time`: Override unix time. Defaults to `0`.
+##
+## ### Returns
+## The new `JwtVerifyOptions` instance.
+pub function jwt_options_new(leeway: int = 0, issuer: string = "", audience: string = "", ignore_expiration: int = 0, current_time: int = 0) -> JwtVerifyOptions
     return JwtVerifyOptions {
         leeway: leeway,
         issuer: issuer,
@@ -95,8 +170,8 @@ pub function jwt_options_new(leeway = 0, issuer = "", audience = "", ignore_expi
     }
 end
 
-# Internal whitespace trimmer (private to module)
-function _jwt_trim(s)
+# Internal whitespace trimmer (private to module).
+function _jwt_trim(s: string) -> string
     let slen = len(s)
     if slen == 0
         return ""
@@ -123,8 +198,14 @@ function _jwt_trim(s)
     return substring(s, start_idx, end_idx - start_idx + 1)
 end
 
-## Public token string splitter (splits header.payload.signature).
-pub function split_parts(token)
+## Splits a token string on dots (`header.payload.signature`).
+##
+## ### Parameters
+## - `token`: Token string.
+##
+## ### Returns
+## Array of segment strings.
+pub function split_parts(token: string) -> array
     let s = _jwt_trim(token)
     let slen = len(s)
     let parts = []

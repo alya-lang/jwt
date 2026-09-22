@@ -1,5 +1,7 @@
-# JWT (JSON Web Token) Example - RFC 7519 Workflow
-# Demonstrates issuance, parsing, Bearer token extraction, and claim verification.
+## Demo of the jwt package (RFC 7519 workflow)
+##
+## Shows issuance, parsing, Bearer extraction, and claim verification.
+## Part of the Alya Language package ecosystem (https://github.com/alya-lang)
 
 import "../src/lib.alya" as jwt
 import "std/time"
