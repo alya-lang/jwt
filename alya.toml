@@ -16,3 +16,12 @@ crypto = { git = "https://github.com/alya-lang/crypto", tag = "v0.1.0" }
 # [lint]
 # disabled_rules = []
 # exclude = []
+
+# [fmt]
+# exclude = []
+
+# [test]
+# exclude = []
+
+# [bench]
+# exclude = []
