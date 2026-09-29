@@ -43,16 +43,27 @@ function main()
 
     # Step 1: Issue token via Fluent Builder API
     say "\n--- 1. Generating JWT Token using Fluent Builder ---"
+    @cfg(feature = "builder")
     let b = jwt::builder()
+    @cfg(feature = "builder")
     jwt::builder_subject(b, "usr_948172")
+    @cfg(feature = "builder")
     jwt::builder_issuer(b, "auth.alya.lang")
+    @cfg(feature = "builder")
     jwt::builder_audience(b, "api.alya.lang")
+    @cfg(feature = "builder")
     jwt::builder_expires_in(b, 3600)
+    @cfg(feature = "builder")
     jwt::builder_claim_str(b, "role", "maintainer")
+    @cfg(feature = "builder")
     jwt::builder_claim_int(b, "tier", 5)
+    @cfg(feature = "builder")
     jwt::builder_claim_bool(b, "verified", 1)
 
+    @cfg(feature = "builder")
     let token = jwt::builder_sign(b, secret)
+    @cfg(not(feature = "builder"))
+    let token = jwt::encode({"sub": "usr_948172", "iss": "auth.alya.lang", "aud": "api.alya.lang", "role": "maintainer", "tier": 5, "verified": 1, "iat": time(), "exp": time() + 3600}, secret)
     say "Generated Token:\n" + token
 
     # Step 2: Inspect token without verifying secret (Decode)
@@ -85,14 +96,24 @@ function main()
 
     # Step 6: Simulate Expired Token
     say "\n--- 6. Simulating Expired Token ---"
+    @cfg(feature = "builder")
     let b_exp = jwt::builder()
+    @cfg(feature = "builder")
     jwt::builder_subject(b_exp, "usr_expired")
+    @cfg(feature = "builder")
     jwt::builder_issuer(b_exp, "auth.alya.lang")
+    @cfg(feature = "builder")
     jwt::builder_audience(b_exp, "api.alya.lang")
+    @cfg(feature = "builder")
     jwt::builder_expires_at(b_exp, time() - 300)
+    @cfg(feature = "builder")
     jwt::builder_claim_str(b_exp, "role", "guest")
+    @cfg(feature = "builder")
     jwt::builder_claim_int(b_exp, "tier", 1)
+    @cfg(feature = "builder")
     let expired_token = jwt::builder_sign(b_exp, secret)
+    @cfg(not(feature = "builder"))
+    let expired_token = jwt::encode({"sub": "usr_expired", "iss": "auth.alya.lang", "aud": "api.alya.lang", "role": "guest", "tier": 1, "iat": time() - 3600, "exp": time() - 300}, secret)
     simulate_http_api("Bearer " + expired_token, secret)
 
     say "\n=================================================="

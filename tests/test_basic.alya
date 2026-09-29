@@ -51,6 +51,7 @@ function test_tampered_token(r)
     runner_assert_eq(r, res_sig.valid, 0, "Invalid signature token should fail verification")
 end
 
+@cfg(feature = "builder")
 function test_sign_helper_and_expiry(r)
     say "--- test_sign_helper_and_expiry ---"
     let secret = "sign-secret"
@@ -65,6 +66,7 @@ function test_sign_helper_and_expiry(r)
     runner_assert_str_eq(r, sub_claim, "session_99", "get_claim('sub') should match")
 end
 
+@cfg(feature = "builder")
 function test_expiration_verification(r)
     say "--- test_expiration_verification ---"
     let secret = "exp-secret"
@@ -96,6 +98,7 @@ function test_expiration_verification(r)
     runner_assert_eq(r, res_leeway.valid, 1, "Token within leeway should pass verification")
 end
 
+@cfg(feature = "builder")
 function test_claims_issuer_and_audience(r)
     say "--- test_claims_issuer_and_audience ---"
     let secret = "claims-secret"
@@ -121,6 +124,7 @@ function test_claims_issuer_and_audience(r)
     runner_assert_eq(r, res_bad_aud.valid, 0, "Wrong audience should fail")
 end
 
+@cfg(feature = "builder")
 function test_builder_fluent_api(r)
     say "--- test_builder_fluent_api ---"
     let secret = "builder-key"
@@ -182,16 +186,25 @@ function test_modern_features(r)
     runner_assert_eq(r, jwt::JwtErrorCode.INVALID_SIGNATURE, 5, "JwtErrorCode.INVALID_SIGNATURE should equal 5")
     runner_assert_eq(r, jwt::JwtErrorCode.TOKEN_EXPIRED, 6, "JwtErrorCode.TOKEN_EXPIRED should equal 6")
 
+    @cfg(feature = "builder")
     let b = jwt::builder()
+    @cfg(feature = "builder")
     jwt::builder_subject(b, "alice")
+    @cfg(feature = "builder")
     jwt::builder_claim_str(b, "role", "admin")
+    @cfg(feature = "builder")
     let token = jwt::builder_sign(b, "secret123")
 
+    @cfg(feature = "builder")
     let decoded = jwt::decode(token)
+    @cfg(feature = "builder")
     runner_assert_eq(r, decoded.is_valid(), 1, "decoded.is_valid() should return 1")
+    @cfg(feature = "builder")
     runner_assert_str_eq(r, decoded.get_claim("sub"), "alice", "decoded.get_claim('sub') should match")
 
+    @cfg(feature = "builder")
     let parts = jwt::split_parts(token)
+    @cfg(feature = "builder")
     runner_assert_eq(r, len(parts), 3, "split_parts should return 3 parts")
 
     let opts = jwt::options()
@@ -209,9 +222,13 @@ function main()
 
     test_basic_encode_decode(r)
     test_tampered_token(r)
+    @cfg(feature = "builder")
     test_sign_helper_and_expiry(r)
+    @cfg(feature = "builder")
     test_expiration_verification(r)
+    @cfg(feature = "builder")
     test_claims_issuer_and_audience(r)
+    @cfg(feature = "builder")
     test_builder_fluent_api(r)
     test_crypto_primitives_nist_vector(r)
     test_malformed_tokens(r)

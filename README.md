@@ -62,6 +62,24 @@ alya add jwt --git https://github.com/alya-lang/jwt --branch main
 alya install
 ```
 
+### Package Features
+
+| Feature | Default | Description |
+|:---|:---:|:---|
+| `builder` | ✅ | Fluent `JwtBuilder` API (`builder()`, `builder_*`, `sign()`, `builder_sign`). Without it only direct `encode`/`decode`/`verify` remain. |
+
+`crypto` stays required: HMAC-SHA256 signing/verification is the package core and has no fallback.
+
+```bash
+# Full build (default)
+alya install
+alya test
+
+# Slim build without the fluent builder
+alya install --no-default-features
+alya test --no-default-features
+```
+
 ---
 
 ## 🚀 Quick Start

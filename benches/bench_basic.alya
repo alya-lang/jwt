@@ -38,20 +38,6 @@ function main()
     end
     bench_stop(runner, "encode() 5k")
 
-    # 4. Fluent Builder API + Sign
-    bench_start(runner, 5000)
-    let m = 0
-    while m < 5000
-        let b = jwt::builder()
-        jwt::builder_subject(b, "user_42")
-        jwt::builder_issuer(b, "auth.alya.lang")
-        jwt::builder_audience(b, "api.alya.lang")
-        jwt::builder_expires_in(b, 3600)
-        jwt::builder_sign(b, secret)
-        m += 1
-    end
-    bench_stop(runner, "builder() + sign 5k")
-
     # 5. Raw HMAC-SHA256 Primitives
     let signing_input = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzQyIiwicm9sZSI6ImFkbWluIn0"
     bench_start(runner, 5000)
@@ -73,7 +59,27 @@ function main()
     end
     bench_stop(runner, "b64url_encode + decode 20k")
 
+    @cfg(feature = "builder")
+    bench_builder(runner, secret)
+
     bench_summary(runner)
 end
 
 main()
+
+@cfg(feature = "builder")
+function bench_builder(runner, secret)
+    # 4. Fluent Builder API + Sign
+    bench_start(runner, 5000)
+    let m = 0
+    while m < 5000
+        let b = jwt::builder()
+        jwt::builder_subject(b, "user_42")
+        jwt::builder_issuer(b, "auth.alya.lang")
+        jwt::builder_audience(b, "api.alya.lang")
+        jwt::builder_expires_in(b, 3600)
+        jwt::builder_sign(b, secret)
+        m += 1
+    end
+    bench_stop(runner, "builder() + sign 5k")
+end

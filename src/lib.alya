@@ -9,6 +9,7 @@
 import "crypto" as crypto
 import "./types.alya"
 import "./core/verifier.alya"
+@cfg(feature = "builder")
 import "./builder.alya"
 import "std/json"
 import "std/time"
@@ -19,12 +20,15 @@ import "std/time"
 
 ## Signs the builder's accumulated claims with a secret.
 ##
+## Requires the `builder` feature (default-on).
+##
 ## ### Parameters
 ## - `self`: The target `JwtBuilder` instance.
 ## - `secret`: Signing secret string.
 ##
 ## ### Returns
 ## The signed token string.
+@cfg(feature = "builder")
 pub function JwtBuilder.sign(self: JwtBuilder, secret: string) -> string
     return encode_raw(builder_to_json(self), secret)
 end
@@ -120,6 +124,8 @@ end
 
 ## Creates a token with auto-populated `iat` and `exp` claims.
 ##
+## Requires the `builder` feature (default-on).
+##
 ## ### Parameters
 ## - `payload`: Claim map.
 ## - `secret`: Signing secret string.
@@ -127,6 +133,7 @@ end
 ##
 ## ### Returns
 ## The signed token string.
+@cfg(feature = "builder")
 pub function sign(payload, secret: string, expires_in_sec: int = 3600) -> string
     let b = builder()
     let now_sec = time()
@@ -326,12 +333,15 @@ end
 
 ## Signs using an assembled JwtBuilder instance.
 ##
+## Requires the `builder` feature (default-on).
+##
 ## ### Parameters
 ## - `b`: Target `JwtBuilder` instance.
 ## - `secret`: Signing secret string.
 ##
 ## ### Returns
 ## The signed token string.
+@cfg(feature = "builder")
 pub function builder_sign(b: JwtBuilder, secret: string) -> string
     return encode_raw(builder_to_json(b), secret)
 end
