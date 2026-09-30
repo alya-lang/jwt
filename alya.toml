@@ -11,11 +11,7 @@ repository = "https://github.com/alya-lang/jwt"
 keywords = ["alya", "alya-lang", "package", "jwt", "token", "auth", "security", "crypto"]
 
 [dependencies]
-crypto = { git = "https://github.com/alya-lang/crypto", tag = "v0.7.0" }
-
-[features]
-default = ["builder"]
-builder = []
+crypto = { git = "https://github.com/alya-lang/crypto", tag = "v0.1.0" }
 
 # [lint]
 # disabled_rules = []
@@ -29,3 +25,7 @@ builder = []
 
 # [bench]
 # exclude = []
+
+[features]
+default = ["builder"]
+builder = []
