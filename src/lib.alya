@@ -263,7 +263,7 @@ end
 ##
 ## ### Returns
 ## `1` when valid, `0` otherwise.
-pub function is_valid(token: string, secret: string) -> int
+pub function is_valid(token: string, secret: string) -> bool
     let res = verify(token, secret)
     return res.valid == true
 end
@@ -277,7 +277,7 @@ end
 ##
 ## ### Returns
 ## `1` when valid, `0` otherwise.
-pub function is_valid_with_options(token: string, secret: string, options: JwtVerifyOptions) -> int
+pub function is_valid_with_options(token: string, secret: string, options: JwtVerifyOptions) -> bool
     let res = verify_with_options(token, secret, options)
     return res.valid == true
 end
@@ -289,7 +289,7 @@ end
 ##
 ## ### Returns
 ## `1` when expired or undecodable, `0` otherwise.
-pub function is_expired(token: string) -> int
+pub function is_expired(token: string) -> bool
     let t = decode(token)
     if t.valid == false
         return true
