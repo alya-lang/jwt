@@ -52,7 +52,7 @@ end
 ##
 ## ### Returns
 ## `1` when valid, `0` otherwise.
-pub function JwtToken.is_valid(self: JwtToken) -> int
+pub function JwtToken.is_valid(self: JwtToken) -> bool
     return self.valid == true
 end
 
