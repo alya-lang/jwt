@@ -44,7 +44,7 @@ end
 
 # Internal boolean claim appender (private to module).
 function _builder_claim_bool(b: JwtBuilder, key: string, val: int) -> JwtBuilder
-    let s = if val == 1 then "true" else "false"
+    let s = if val == true then "true" else "false"
     let ek = json_escape(key)
     return _builder_add_raw(b, "\"{ek}\": {s}")
 end

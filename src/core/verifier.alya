@@ -21,7 +21,7 @@ pub function verify_claims(payload, options) -> string
     let leeway = opts.leeway
 
     # 1. Expiration check (exp)
-    if opts.ignore_expiration == 0 and ("exp" in payload)
+    if opts.ignore_expiration == false and ("exp" in payload)
         let exp_val = payload["exp"]
         if current_sec - leeway > exp_val
             return "Token expired"

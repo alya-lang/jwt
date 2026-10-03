@@ -22,12 +22,12 @@ function test_basic_encode_decode(r)
 
     let verified = jwt::verify(token, secret)
     runner_assert_eq(r, verified.valid, 1, "Verification with correct secret should succeed")
-    runner_assert_eq(r, jwt::is_valid(token, secret), 1, "is_valid should return 1")
+    runner_assert_eq(r, jwt::is_valid(token, secret), true, "is_valid should return 1")
 
     let wrong_secret = "wrong-secret-key"
     let fail_verify = jwt::verify(token, wrong_secret)
     runner_assert_eq(r, fail_verify.valid, 0, "Verification with wrong secret should fail")
-    runner_assert_eq(r, jwt::is_valid(token, wrong_secret), 0, "is_valid should return 0 for wrong secret")
+    runner_assert_eq(r, jwt::is_valid(token, wrong_secret), false, "is_valid should return 0 for wrong secret")
 end
 
 function test_tampered_token(r)
@@ -80,7 +80,7 @@ function test_expiration_verification(r)
 
     let res = jwt::verify(expired_token, secret)
     runner_assert_eq(r, res.valid, 0, "Expired token should fail default verification")
-    runner_assert_eq(r, jwt::is_expired(expired_token), 1, "is_expired should return 1")
+    runner_assert_eq(r, jwt::is_expired(expired_token), true, "is_expired should return 1")
 
     # Ignore expiration option
     let opts = jwt::options(0, "", "", 1)
@@ -198,7 +198,7 @@ function test_modern_features(r)
     @cfg(feature = "builder")
     let decoded = jwt::decode(token)
     @cfg(feature = "builder")
-    runner_assert_eq(r, decoded.is_valid(), 1, "decoded.is_valid() should return 1")
+    runner_assert_eq(r, decoded.is_valid(), true, "decoded.is_valid() should return 1")
     @cfg(feature = "builder")
     runner_assert_str_eq(r, decoded.get_claim("sub"), "alice", "decoded.get_claim('sub') should match")
 

@@ -52,11 +52,11 @@ function _map_to_json(m) -> string
             is "exp", "iat", "nbf" then
                 res += "\"{escaped_key}\": {val}"
             is "admin", "active" then
-                let bool_str = if val == 1 then "true" else "false"
+                let bool_str = if val == true then "true" else "false"
                 res += "\"{escaped_key}\": {bool_str}"
             else
                 if len(key) >= 3 and substring(key, 0, 3) == "is_"
-                    let bool_str = if val == 1 then "true" else "false"
+                    let bool_str = if val == true then "true" else "false"
                     res += "\"{escaped_key}\": {bool_str}"
                 else
                     let esc_val = json_escape(val)
@@ -229,7 +229,7 @@ pub function verify_with_options(token: string, secret: string, options: JwtVeri
     let sig_bytes = crypto::hmac_sha256_bytes(k_bytes, m_bytes)
     let expected_sig = crypto::base64url_encode_bytes(sig_bytes)
 
-    if crypto::constant_time_eq(signature, expected_sig) == 0
+    if crypto::constant_time_eq(signature, expected_sig) == false
         return jwt_token_new(token, header, payload, signature, 0, "Invalid signature")
     end
 
@@ -265,7 +265,7 @@ end
 ## `1` when valid, `0` otherwise.
 pub function is_valid(token: string, secret: string) -> int
     let res = verify(token, secret)
-    return res.valid == 1
+    return res.valid == true
 end
 
 ## Returns `1` when the token matches the given options.
@@ -279,7 +279,7 @@ end
 ## `1` when valid, `0` otherwise.
 pub function is_valid_with_options(token: string, secret: string, options: JwtVerifyOptions) -> int
     let res = verify_with_options(token, secret, options)
-    return res.valid == 1
+    return res.valid == true
 end
 
 ## Returns `1` when the token is expired (`now > exp`).
@@ -291,13 +291,13 @@ end
 ## `1` when expired or undecodable, `0` otherwise.
 pub function is_expired(token: string) -> int
     let t = decode(token)
-    if t.valid == 0
-        return 1
+    if t.valid == false
+        return true
     end
     if t.payload is not null and ("exp" in t.payload)
         return time() > t.payload["exp"]
     end
-    return 0
+    return false
 end
 
 ## Extracts a claim without full signature verification.
@@ -310,7 +310,7 @@ end
 ## The claim string, or null when missing or invalid.
 pub function get_claim(token: string, claim_name: string)
     let t = decode(token)
-    if t.valid == 1 and t.payload is not null and (claim_name in t.payload)
+    if t.valid == true and t.payload is not null and (claim_name in t.payload)
         return str_from_ptr(t.payload[claim_name])
     end
     return null

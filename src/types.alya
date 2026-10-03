@@ -53,7 +53,7 @@ end
 ## ### Returns
 ## `1` when valid, `0` otherwise.
 pub function JwtToken.is_valid(self: JwtToken) -> int
-    return self.valid == 1
+    return self.valid == true
 end
 
 ## Retrieves a claim value when present on a valid token.
@@ -65,7 +65,7 @@ end
 ## ### Returns
 ## The claim string, or null when missing or invalid.
 pub function JwtToken.get_claim(self: JwtToken, claim_name: string)
-    if self.valid == 1 and self.payload is not null and (claim_name in self.payload)
+    if self.valid == true and self.payload is not null and (claim_name in self.payload)
         return str_from_ptr(self.payload[claim_name])
     end
     return null
