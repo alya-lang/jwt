@@ -58,9 +58,16 @@ function _map_to_json(m) -> string
                 if len(key) >= 3 and substring(key, 0, 3) == "is_"
                     let bool_str = if val == true then "true" else "false"
                     res += f"\"{escaped_key}\": {bool_str}"
-                else
+                elif val is null
+                    res += f"\"{escaped_key}\": null"
+                elif val is string
                     let esc_val = json_escape(val)
                     res += f"\"{escaped_key}\": \"{esc_val}\""
+                else
+                    # Numbers ride unquoted so tokens built here verify
+                    # identically to builder-built ones (previously crashed
+                    # passing non-strings to json_escape).
+                    res += f"\"{escaped_key}\": {str(val)}"
                 end
         end
     end

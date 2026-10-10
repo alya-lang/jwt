@@ -28,6 +28,14 @@ function test_basic_encode_decode(r)
     let fail_verify = jwt::verify(token, wrong_secret)
     runner_assert_eq(r, fail_verify.valid, 0, "Verification with wrong secret should fail")
     runner_assert_eq(r, jwt::is_valid(token, wrong_secret), false, "is_valid should return 0 for wrong secret")
+
+    # Non-string claims must serialize typed (numbers unquoted, not crash).
+    let mixed = {"sub": "user_7", "tier": 5, "note": null}
+    let mixed_token = jwt::encode(mixed, secret)
+    runner_assert(r, len(mixed_token) > 20, "Mixed-claim token should be non-empty string")
+    let mixed_back = jwt::verify(mixed_token, secret)
+    runner_assert_eq(r, mixed_back.valid, 1, "Mixed-claim token should verify")
+    runner_assert_eq(r, mixed_back.payload["tier"], 5, "Int claim should round-trip as number")
 end
 
 function test_tampered_token(r)
