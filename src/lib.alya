@@ -50,17 +50,17 @@ function _map_to_json(m) -> string
         let escaped_key = json_escape(key)
         when key
             is "exp", "iat", "nbf" then
-                res += "\"{escaped_key}\": {val}"
+                res += f"\"{escaped_key}\": {val}"
             is "admin", "active" then
                 let bool_str = if val == true then "true" else "false"
-                res += "\"{escaped_key}\": {bool_str}"
+                res += f"\"{escaped_key}\": {bool_str}"
             else
                 if len(key) >= 3 and substring(key, 0, 3) == "is_"
                     let bool_str = if val == true then "true" else "false"
-                    res += "\"{escaped_key}\": {bool_str}"
+                    res += f"\"{escaped_key}\": {bool_str}"
                 else
                     let esc_val = json_escape(val)
-                    res += "\"{escaped_key}\": \"{esc_val}\""
+                    res += f"\"{escaped_key}\": \"{esc_val}\""
                 end
         end
     end
@@ -84,14 +84,14 @@ end
 pub function encode_raw(payload_json_str: string, secret: string, header_json_str: string = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}") -> string
     let header_b64 = crypto::base64url_encode(header_json_str)
     let payload_b64 = crypto::base64url_encode(payload_json_str)
-    let signing_input = "{header_b64}.{payload_b64}"
+    let signing_input = f"{header_b64}.{payload_b64}"
 
     let k_bytes = crypto::str_to_bytes(secret)
     let m_bytes = crypto::str_to_bytes(signing_input)
     let sig_bytes = crypto::hmac_sha256_bytes(k_bytes, m_bytes)
     let sig_b64 = crypto::base64url_encode_bytes(sig_bytes)
 
-    return "{signing_input}.{sig_b64}"
+    return f"{signing_input}.{sig_b64}"
 end
 
 ## Encodes a Map payload and signs it with HMAC-SHA256 (HS256).
@@ -212,7 +212,7 @@ pub function verify_with_options(token: string, secret: string, options: JwtVeri
         is "HS256" then
             # Supported algorithm
         else
-            return jwt_token_new(token, header, null, signature, 0, "Unsupported algorithm: {alg}")
+            return jwt_token_new(token, header, null, signature, 0, f"Unsupported algorithm: {alg}")
     end
 
     let payload = json_parse(payload_raw)
@@ -223,7 +223,7 @@ pub function verify_with_options(token: string, secret: string, options: JwtVeri
     # 1. Verify HMAC-SHA256 signature
     let p0 = parts[0]
     let p1 = parts[1]
-    let signing_input = "{p0}.{p1}"
+    let signing_input = f"{p0}.{p1}"
     let k_bytes = crypto::str_to_bytes(secret)
     let m_bytes = crypto::str_to_bytes(signing_input)
     let sig_bytes = crypto::hmac_sha256_bytes(k_bytes, m_bytes)

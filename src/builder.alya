@@ -21,7 +21,7 @@ end
 # Internal raw claim appender (private to module).
 function _builder_add_raw(b: JwtBuilder, pair_str: string) -> JwtBuilder
     if b.claim_count > 0
-        b.claims_str += ", {pair_str}"
+        b.claims_str += f", {pair_str}"
     else
         b.claims_str = pair_str
     end
@@ -33,20 +33,20 @@ end
 function _builder_claim_str(b: JwtBuilder, key: string, val: string) -> JwtBuilder
     let ek = json_escape(key)
     let ev = json_escape(val)
-    return _builder_add_raw(b, "\"{ek}\": \"{ev}\"")
+    return _builder_add_raw(b, f"\"{ek}\": \"{ev}\"")
 end
 
 # Internal integer claim appender (private to module).
 function _builder_claim_int(b: JwtBuilder, key: string, val: int) -> JwtBuilder
     let ek = json_escape(key)
-    return _builder_add_raw(b, "\"{ek}\": {val}")
+    return _builder_add_raw(b, f"\"{ek}\": {val}")
 end
 
 # Internal boolean claim appender (private to module).
 function _builder_claim_bool(b: JwtBuilder, key: string, val: int) -> JwtBuilder
     let s = if val == true then "true" else "false"
     let ek = json_escape(key)
-    return _builder_add_raw(b, "\"{ek}\": {s}")
+    return _builder_add_raw(b, f"\"{ek}\": {s}")
 end
 
 # Internal subject claim setter (private to module).
